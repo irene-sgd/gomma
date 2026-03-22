@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOMMA — Liquid</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #080810;
+    overflow: hidden;
+    font-family: 'Montserrat', sans-serif;
+  }
+  #stage { display: block; position: fixed; top: 0; left: 0; }
+
+  #ui {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+  .btn {
+    padding: 10px 22px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.5);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(8px);
+  }
+  .btn:hover, .btn.active {
+    border-color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.08);
+  }
+
+  #hint {
+    position: fixed;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 1s;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<div id="hint">Move cursor &nbsp;/&nbsp; Touch to distort</div>
+
+<div id="ui">
+  <button class="btn active" data-mode="0">Liquid</button>
+  <button class="btn" data-mode="1">Ripple</button>
+  <button class="btn" data-mode="2">Warp</button>
+  <button class="btn" data-mode="3">Chaos</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.12/pixi.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────────
+const MODES = [
+  { name: 'Liquid',  scaleIdle: 18,  scaleHover: 90,  speed: 1.2,  blurPasses: 5 },
+  { name: 'Ripple',  scaleIdle: 40,  scaleHover: 60,  speed: 3.5,  blurPasses: 2 },
+  { name: 'Warp',    scaleIdle: 8,   scaleHover: 140, speed: 0.4,  blurPasses: 7 },
+  { name: 'Chaos',   scaleIdle: 60,  scaleHover: 200, speed: 6.0,  blurPasses: 1 },
+];
+let currentMode = 0;
+
+// ─── PIXI SETUP ──────────────────────────────────────────────────────────────
+const W = window.innerWidth;
+const H = window.innerHeight;
+
+const app = new PIXI.Application({
+  view: document.getElementById('stage'),
+  width: W, height: H,
+  backgroundColor: 0x080810,
+  antialias: true,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
+});
+
+// ─── SMOOTH NOISE TEXTURE ────────────────────────────────────────────────────
+function buildNoiseCanvas(size, blurPasses) {
+  // Step 1: tiny random noise
+  const tiny = document.createElement('canvas');
+  tiny.width = 64; tiny.height = 64;
+  const tc = tiny.getContext('2d');
+  const id = tc.createImageData(64, 64);
+  for (let i = 0; i < id.data.length; i += 4) {
+    const v = Math.floor(Math.random() * 255);
+    id.data[i] = v; id.data[i+1] = v; id.data[i+2] = v; id.data[i+3] = 255;
+  }
+  tc.putImageData(id, 0, 0);
+
+  // Step 2: scale up with smoothing (blur via downscale/upscale cycles)
+  let src = tiny;
+  for (let p = 0; p < blurPasses; p++) {
+    const half = document.createElement('canvas');
+    half.width = Math.max(4, src.width / 2);
+    half.height = Math.max(4, src.height / 2);
+    const hc = half.getContext('2d');
+    hc.imageSmoothingEnabled = true;
+    hc.imageSmoothingQuality = 'high';
+    hc.drawImage(src, 0, 0, half.width, half.height);
+    src = half;
+  }
+
+  const big = document.createElement('canvas');
+  big.width = size; big.height = size;
+  const bc = big.getContext('2d');
+  bc.imageSmoothingEnabled = true;
+  bc.imageSmoothingQuality = 'high';
+  bc.drawImage(src, 0, 0, size, size);
+  return big;
+}
+
+// ─── BACKGROUND ──────────────────────────────────────────────────────────────
+const mainContainer = new PIXI.Container();
+app.stage.addChild(mainContainer);
+
+// Dark base
+const bg = new PIXI.Graphics();
+bg.beginFill(0x080810); bg.drawRect(0, 0, W, H); bg.endFill();
+mainContainer.addChild(bg);
+
+// Soft coloured aura blobs
+const auras = [
+  { x: 0.25, y: 0.45, rx: 0.45, ry: 0.55, color: 0x1a0836, alpha: 0.9 },
+  { x: 0.75, y: 0.55, rx: 0.40, ry: 0.50, color: 0x00153a, alpha: 0.8 },
+  { x: 0.50, y: 0.20, rx: 0.30, ry: 0.38, color: 0x240a20, alpha: 0.7 },
+  { x: 0.50, y: 0.80, rx: 0.35, ry: 0.28, color: 0x0a1a30, alpha: 0.6 },
+];
+auras.forEach(a => {
+  const g = new PIXI.Graphics();
+  g.beginFill(a.color, a.alpha);
+  g.drawEllipse(W * a.x, H * a.y, W * a.rx, H * a.ry);
+  g.endFill();
+  mainContainer.addChild(g);
+});
+
+// ─── TEXT ─────────────────────────────────────────────────────────────────────
+const fontSize = Math.min(W * 0.22, 220);
+
+const titleStyle = new PIXI.TextStyle({
+  fontFamily: 'Bebas Neue',
+  fontSize,
+  fill: '#ffffff',
+  letterSpacing: 18,
+});
+
+const title = new PIXI.Text('GOMMA', titleStyle);
+title.anchor.set(0.5);
+title.x = W / 2;
+title.y = H / 2;
+mainContainer.addChild(title);
+
+const subStyle = new PIXI.TextStyle({
+  fontFamily: 'Montserrat',
+  fontSize: 11,
+  fontWeight: '300',
+  fill: 'rgba(255,255,255,0.35)',
+  letterSpacing: 7,
+});
+const sub = new PIXI.Text('CREATIVE STUDIO', subStyle);
+sub.anchor.set(0.5);
+sub.x = W / 2;
+sub.y = H / 2 + fontSize * 0.58;
+mainContainer.addChild(sub);
+
+// Small dot separator above text
+const dot = new PIXI.Graphics();
+dot.beginFill(0xffffff, 0.25);
+dot.drawCircle(0, 0, 2);
+dot.endFill();
+dot.x = W / 2;
+dot.y = H / 2 - fontSize * 0.58;
+mainContainer.addChild(dot);
+
+// ─── DISPLACEMENT ─────────────────────────────────────────────────────────────
+let displacementSprite, displacementFilter;
+
+function buildDisplacement(blurPasses) {
+  if (displacementSprite) {
+    mainContainer.removeChild(displacementSprite);
+    displacementSprite.destroy();
+  }
+
+  const noiseCanvas = buildNoiseCanvas(512, blurPasses);
+  const tex = PIXI.Texture.from(noiseCanvas);
+  tex.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
+
+  displacementSprite = new PIXI.Sprite(tex);
+  displacementSprite.width = W * 1.2;
+  displacementSprite.height = H * 1.2;
+  mainContainer.addChild(displacementSprite);
+
+  displacementFilter = new PIXI.filters.DisplacementFilter(displacementSprite);
+  displacementFilter.scale.set(MODES[currentMode].scaleIdle);
+  mainContainer.filters = [displacementFilter];
+}
+
+buildDisplacement(MODES[0].blurPasses);
+
+// ─── ANIMATION LOOP ───────────────────────────────────────────────────────────
+let tick = 0;
+app.ticker.add((delta) => {
+  const speed = MODES[currentMode].speed;
+  tick += delta;
+  displacementSprite.x += speed * delta * 0.8;
+  displacementSprite.y += speed * delta * 0.5;
+  if (displacementSprite.x > displacementSprite.width)  displacementSprite.x = 0;
+  if (displacementSprite.y > displacementSprite.height) displacementSprite.y = 0;
+});
+
+// ─── MOUSE / TOUCH ────────────────────────────────────────────────────────────
+let idleTimer;
+const mode = MODES[currentMode];
+
+function onMove(ex, ey) {
+  if (!displacementFilter) return;
+  const m = MODES[currentMode];
+  gsap.to(displacementFilter.scale, {
+    x: m.scaleHover,
+    y: m.scaleHover,
+    duration: 0.4,
+    ease: 'power2.out',
+    overwrite: true,
+  });
+
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    gsap.to(displacementFilter.scale, {
+      x: m.scaleIdle,
+      y: m.scaleIdle,
+      duration: 2.5,
+      ease: 'power3.out',
+    });
+  }, 1200);
+}
+
+window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+window.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  onMove(t.clientX, t.clientY);
+}, { passive: true });
+
+// ─── INTRO ─────────────────────────────────────────────────────────────────────
+title.alpha = 0;
+sub.alpha = 0;
+dot.alpha = 0;
+
+gsap.fromTo(displacementFilter.scale,
+  { x: 260, y: 260 },
+  { x: MODES[0].scaleIdle, y: MODES[0].scaleIdle, duration: 3, ease: 'power4.out', delay: 0.2 }
+);
+gsap.to(title, { alpha: 1, duration: 1.8, delay: 0.3, ease: 'power2.out' });
+gsap.to(sub,   { alpha: 1, duration: 1.8, delay: 0.7, ease: 'power2.out' });
+gsap.to(dot,   { alpha: 1, duration: 1.8, delay: 0.5, ease: 'power2.out' });
+
+// Fade out hint after 4s
+setTimeout(() => {
+  const hint = document.getElementById('hint');
+  if (hint) hint.style.opacity = '0';
+}, 5000);
+
+// ─── MODE BUTTONS ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = parseInt(btn.dataset.mode);
+    const m = MODES[currentMode];
+
+    // Rebuild displacement texture with new blur setting
+    buildDisplacement(m.blurPasses);
+
+    // Transition scale
+    gsap.fromTo(displacementFilter.scale,
+      { x: 220, y: 220 },
+      { x: m.scaleIdle, y: m.scaleIdle, duration: 1.5, ease: 'power3.out' }
+    );
+  });
+});
+
+// ─── RESIZE ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  // Simple reload to re-layout (clean approach for demo)
+  // In production, rebuild all geometry
+});
+</script>
+</body>
+</html>
