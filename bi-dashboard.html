@@ -252,7 +252,7 @@ function saveToken(t) { localStorage.setItem(TOKEN_KEY, t); }
 
 async function notionGet(path) {
   var token = getToken();
-  var res = await fetch('https://api.notion.com/v1/' + path, {
+  var res = await fetch('https://notion-proxy.irene-sgd.workers.dev/v1/' + path, {
     headers: { 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' }
   });
   if (!res.ok) throw new Error('Notion API error: ' + res.status);
@@ -490,7 +490,7 @@ function renderTokenForm(errorMsg) {
   html += '<h2>Connect to Notion</h2>';
   html += '<p>Enter your Notion integration token to load live data from your workspace.</p>';
   if (errorMsg) html += '<div class="error-msg">' + errorMsg + '</div>';
-  html += '<input class="token-input" id="token-input" type="password" placeholder="secret_xxxxxxxxxxxxxxxx" />';
+  html += '<input class="token-input" id="token-input" type="password" placeholder="ntn_xxxxxxxxxxxx or secret_xxxxxxxxxxxx" />';
   html += '<button class="save-btn" onclick="submitToken()">Connect</button>';
   html += '<p class="token-note">Your token is stored locally in your browser and never sent anywhere except directly to Notion\'s API. Create an integration at notion.so/my-integrations and share your workspace pages with it.</p>';
   html += '</div>';
@@ -499,8 +499,8 @@ function renderTokenForm(errorMsg) {
 
 function submitToken() {
   var val = document.getElementById('token-input').value.trim();
-  if (!val.startsWith('secret_') && !val.startsWith('ntn_')) {
-    renderTokenForm('Token should start with secret_ or ntn_');
+  if (!val || (!val.startsWith('secret_') && !val.startsWith('ntn_'))) {
+    renderTokenForm('Token must start with secret_ or ntn_ — paste it carefully, no extra spaces');
     return;
   }
   saveToken(val);
