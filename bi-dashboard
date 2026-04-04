@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f4;
+    --bg3: #eeede9;
+    --text: #1a1a1a;
+    --text2: #6b6b6b;
+    --text3: #9a9a9a;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.2);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --bg2: #242424;
+      --bg3: #2e2e2e;
+      --text: #f0f0f0;
+      --text2: #a0a0a0;
+      --text3: #666;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; background: var(--bg); color: var(--text); line-height: 1.5; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+  .topbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo span { color: var(--text2); font-weight: 400; }
+  .project-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+  .project-btn { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 999px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); transition: all .15s; }
+  .project-btn:hover { background: var(--bg2); color: var(--text); }
+  .project-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .refresh-btn { font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 999px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); transition: all .15s; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { background: var(--bg2); color: var(--text); }
+  .refresh-btn.loading { opacity: .5; pointer-events: none; }
+  .spinner { width: 12px; height: 12px; border: 1.5px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  .refresh-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-bar { font-size: 11px; color: var(--text3); margin-bottom: 1.5rem; }
+  .header { padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text2); margin-bottom: 4px; }
+  .proj-title { font-size: 22px; font-weight: 600; color: var(--text); }
+  .proj-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 999px; }
+  .b-blue { background: #E6F1FB; color: #0C447C; }
+  .b-green { background: #EAF3DE; color: #27500A; }
+  .b-yellow { background: #FAEEDA; color: #633806; }
+  .b-purple { background: #EEEDFE; color: #3C3489; }
+  .b-red { background: #FCEBEB; color: #791F1F; }
+  .b-gray { background: #F1EFE8; color: #444441; }
+  .header-right { text-align: right; font-size: 12px; color: var(--text2); line-height: 2; }
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; overflow-x: auto; }
+  .tab { padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; transition: color .12s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .sl { font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--text2); margin-bottom: 10px; margin-top: 1.5rem; }
+  .sl:first-child { margin-top: 0; }
+  .mg { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .mg3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1rem; }
+  @media (max-width: 700px) { .mg { grid-template-columns: repeat(2, 1fr); } .mg3 { grid-template-columns: repeat(2, 1fr); } }
+  .mc { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .ml { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .mv { font-size: 22px; font-weight: 600; }
+  .ms { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .ct { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .two { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 12px; margin-bottom: 1rem; }
+  @media (max-width: 700px) { .two { grid-template-columns: 1fr; } }
+  .row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border); font-size: 12px; }
+  .row:last-child { border-bottom: none; }
+  .rn { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+  .p-g { background: #C0DD97; color: #27500A; }
+  .p-b { background: #B5D4F4; color: #0C447C; }
+  .p-y { background: #FAC775; color: #633806; }
+  .p-r { background: #F7C1C1; color: #791F1F; }
+  .p-v { background: #CECBF6; color: #3C3489; }
+  .p-gr { background: #D3D1C7; color: #444441; }
+  .bar-row { display: grid; grid-template-columns: 90px 1fr 60px; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-track { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-lbl { font-size: 12px; color: var(--text2); }
+  .bar-val { font-size: 12px; font-weight: 500; text-align: right; }
+  .cw { position: relative; width: 100%; height: 180px; }
+  .cw-md { position: relative; width: 100%; height: 200px; }
+  .ic { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
+  .it { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .ib { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .signal-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .signal-row:last-child { border-bottom: none; }
+  .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .st { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .ss { font-size: 12px; color: var(--text2); }
+  .qgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0; }
+  @media (max-width: 700px) { .qgrid { grid-template-columns: repeat(2, 1fr); } }
+  .qcol { padding: 10px 14px; border-right: 0.5px solid var(--border); }
+  .qcol:last-child { border-right: none; }
+  .ql { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+  .qi { font-size: 12px; color: var(--text2); line-height: 1.9; }
+  .token-form { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; text-align: center; }
+  .token-form h2 { font-size: 18px; font-weight: 600; }
+  .token-form p { font-size: 13px; color: var(--text2); max-width: 400px; }
+  .token-input { width: 100%; max-width: 400px; padding: 10px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-size: 13px; font-family: monospace; }
+  .token-input:focus { outline: none; border-color: #378ADD; }
+  .save-btn { padding: 8px 24px; border-radius: 999px; border: none; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .save-btn:hover { opacity: .85; }
+  .token-note { font-size: 11px; color: var(--text3); max-width: 400px; }
+  .error-msg { background: #FCEBEB; color: #791F1F; border-radius: var(--radius); padding: 10px 14px; font-size: 12px; max-width: 500px; margin: 0 auto 1rem; }
+  .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 60vh; flex-direction: column; gap: 16px; }
+  .loading-screen p { font-size: 13px; color: var(--text2); }
+  .big-spinner { width: 32px; height: 32px; border: 2.5px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="root"></div>
+</div>
+
+<script>
+var TOKEN_KEY = 'notion_bi_token';
+var activeTab = 'exec';
+var activeProject = 'pausa';
+var charts = {};
+var liveData = {};
+
+var PROJECTS = {
+  pausa:  { id:'PRJ-7',  name:'PAUSA',                      notionId:'2fc7286d055f8015b30af3e7ee706666', financeFilter:'PAUSA' },
+  knectd: { id:'PRJ-13', name:'KNECTD',                     notionId:'3187286d055f803ba0ffc33f8dc4a4a5', financeFilter:'KNECTD' },
+  gomma:  { id:'PRJ-24', name:'GOMMA Studio',               notionId:'3287286d055f80c09ca4f9c214de534c', financeFilter:'GOMMA' },
+  barcamp:{ id:'PRJ-6',  name:'BarCamp',                    notionId:'2fc7286d055f801289f8c3d8b61066ef', financeFilter:'BarCamp' },
+  mon:    { id:'PRJ-25', name:'Mon Durian',                  notionId:'3307286d055f80cf91e8d87440c7a7c9', financeFilter:'Mon' },
+  ai:     { id:'PRJ-21', name:'AI Agent Assistant',          notionId:'3237286d055f80d9bd03ef1a67246fc1', financeFilter:'AI' },
+};
+
+var STATIC = {
+  pausa: {
+    type:'Thai Cacao Powder · B2B + Consumer', location:'Bangkok, TH', started:'Jan 17, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Pivot: Powder → Primary',c:'b-yellow'},{t:'Pre-Revenue',c:'b-purple'}],
+    signals:[
+      {c:'#639922',t:'Product-market resonance confirmed',d:'73% of 15 tasters rated 4–5 stars. Refreshing, fruity, and light/clean dominate taste descriptors.'},
+      {c:'#639922',t:'B2B lead from tasting event',d:'Bar industry contact (mmybar.com) flagged product as "perfect for cocktails and mocktails."'},
+      {c:'#EF9F27',t:'Pitch deck update overdue',d:'Cacao powder pivot deck (TSK-246) was due Apr 2. Budget, pricing, and TAMSAMSOM slides outstanding.'},
+      {c:'#E24B4A',t:'Zero revenue · pre-investment stage',d:'฿6,400 spent, ฿0 in. Funding round and first B2B client are the Q2 unlock conditions.'},
+    ],
+    okrs:[{t:'Secure KNECTD deal (฿35k/mo)',s:'Done',sc:'p-g'},{t:'Land first B2B client via GOMMA',s:'In flight',sc:'p-y'},{t:'Pitch deck ready for investors',s:'Q2',sc:'p-b'}],
+    spend:6400, revenue:0, burn:2133, reimb:740,
+    monthly:[{m:'Jan',v:338},{m:'Feb',v:420},{m:'Mar',v:5402},{m:'Apr',v:240}],
+    catSpend:[{l:'Raw Material',pct:71},{l:'Office',pct:12},{l:'Admin',pct:11},{l:'Software',pct:7}],
+    strategy:'Deep recovery without the energy crash. Premium Thai cacao powder · traceable origin · zero-waste · B2B primary.',
+    pillars:['Theobromine vs caffeine — smooth energy, no cortisol spike.','Natural bioavailable electrolytes + magnesium from real cacao.','Whole cacao fruit utilisation. Zero-waste sustainability narrative for B2B partners.'],
+    roadmap:[{q:'Q1 2026',done:true,items:'KNECTD deal·Tasting event·Brand MVP·Domain'},{q:'Q2 2026',now:true,items:'Pitch deck·Website launch·First B2B client·Funding'},{q:'Q3 2026',items:'Scale B2B·2nd client·Supply chain'},{q:'Q4 2026',items:'Retail partnership·Revenue milestone'}],
+  },
+  knectd: {
+    type:'Payments Infrastructure · B2B + B2C', location:'Bangkok, TH', started:'Mar 9, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Revenue: ฿35k/mo',c:'b-green'},{t:'Contract signed',c:'b-green'}],
+    signals:[
+      {c:'#639922',t:'Revenue generating — ฿35,000/mo',d:'Scope of work signed. KNECTD is the primary income source funding other projects in the workspace.'},
+      {c:'#639922',t:'Brand positioning established',d:'B2B messaging around payout cost reduction and gig economy payouts is defined and in execution.'},
+      {c:'#EF9F27',t:'Content engine scaling',d:'MarCom workstream active: personas, content pillars, and content bank being built out for Q2.'},
+      {c:'#378ADD',t:'Website messaging underway',d:'Site structure, UX content audit, and homepage (v7.0) copy in production.'},
+    ],
+    okrs:[{t:'Deliver scope of work month 1',s:'Done',sc:'p-g'},{t:'Build MarCom content engine',s:'In flight',sc:'p-y'},{t:'Website + channel setup live',s:'Q2',sc:'p-b'}],
+    spend:0, revenue:35000, burn:0, reimb:0,
+    monthly:[{m:'Jan',v:0},{m:'Feb',v:0},{m:'Mar',v:35000}],
+    catSpend:[{l:'Marketing',pct:60},{l:'Technology',pct:30},{l:'Operations',pct:10}],
+    strategy:'Payments infrastructure for platforms moving money faster. B2B: reduce payout costs and failures. B2C: gig workers receive payouts faster.',
+    pillars:['Outcome-first messaging — cost, speed, compliance before technology.','Stablecoins positioned as infrastructure, not product.','Dual audience: Heads of Payments (B2B) and gig workers (B2C).'],
+    roadmap:[{q:'Q1 2026',done:true,items:'Contract signed·Brand brief·Personas·Content pillars'},{q:'Q2 2026',now:true,items:'Website live·Ads creative·Content bank·Social channels'},{q:'Q3 2026',items:'Performance reporting·Campaign optimisation'},{q:'Q4 2026',items:'Expansion scope·Second workstream'}],
+  },
+  gomma: {
+    type:'Creative Studio · MarCom & Automation', location:'Bangkok, TH', started:'Mar 19, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Pre-Revenue',c:'b-purple'},{t:'Incubating',c:'b-yellow'}],
+    signals:[
+      {c:'#639922',t:'Studio concept defined',d:'GOMMA positions as a creative studio at the intersection of MarCom and AI automation for founders.'},
+      {c:'#EF9F27',t:'Early stage — no revenue yet',d:'Two sub-projects in motion but no client or product signed. First client target is Q2 2026.'},
+      {c:'#378ADD',t:'Marketplace sub-project scoped',d:'Premium Human AI Agentic Creator marketplace is the flagship product concept in development.'},
+    ],
+    okrs:[{t:'Studio identity defined',s:'Done',sc:'p-g'},{t:'Land first GOMMA client',s:'In flight',sc:'p-y'},{t:'Marketplace MVP scoped',s:'In flight',sc:'p-y'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Jan',v:0},{m:'Feb',v:0},{m:'Mar',v:0}],
+    catSpend:[{l:'Strategy',pct:70},{l:'Marketing',pct:25},{l:'Operations',pct:5}],
+    strategy:'Creative studio for founders. Specialises in MarCom strategy, AI-powered content automation, and a creator marketplace.',
+    pillars:['MarCom + automation as a combined service offering.','AI-augmented creators — human quality, machine speed.','Founders as the primary client — lean teams needing full-stack brand execution.'],
+    roadmap:[{q:'Q1 2026',done:true,items:'Studio setup·Sub-projects scoped·Positioning'},{q:'Q2 2026',now:true,items:'First client·Workshop delivery·Marketplace spec'},{q:'Q3 2026',items:'Marketplace build·2nd client'},{q:'Q4 2026',items:'Scale studio·Revenue model locked'}],
+  },
+  barcamp: {
+    type:'Community Event · Network Building', location:'Bangkok, TH', started:'Nov 29, 2025',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Community',c:'b-purple'},{t:'GOMMA reputation play',c:'b-yellow'}],
+    signals:[
+      {c:'#639922',t:'10 CRM contacts logged',d:'BarCamp is a network-building play. 10 contacts already in CRM — the highest for any non-revenue project.'},
+      {c:'#378ADD',t:'Linked to Q1 OKR',d:'Building GOMMA reputation through BarCamp was an explicit Q1 objective. In-flight as of Q2.'},
+      {c:'#EF9F27',t:'Low task count — may need more structure',d:'Only 1 task linked. Consider breaking the event into sub-tasks for tracking prep milestones.'},
+    ],
+    okrs:[{t:'Present at BarCamp event',s:'In flight',sc:'p-y'},{t:'Build GOMMA public profile',s:'In flight',sc:'p-y'},{t:'Expand network from event',s:'Planned',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Nov',v:0},{m:'Dec',v:0},{m:'Jan',v:0},{m:'Mar',v:0}],
+    catSpend:[{l:'Operations',pct:60},{l:'Marketing',pct:35},{l:'Admin',pct:5}],
+    strategy:'Community event participation as a reputation and network-building vehicle for GOMMA Studio. Low cost, high relationship ROI.',
+    pillars:['Public presence for the GOMMA brand among Bangkok tech founders.','Direct relationship building — 10 CRM contacts already seeded.','Feeds pipeline for GOMMA\'s first clients via warm introductions.'],
+    roadmap:[{q:'Q4 2025',done:true,items:'Project opened·Initial planning'},{q:'Q1 2026',done:true,items:'CRM contacts added·Event prep'},{q:'Q2 2026',now:true,items:'Event delivery·Follow-up outreach'},{q:'Q3 2026',items:'Network activation from leads'}],
+  },
+  mon: {
+    type:'Consumer Product · Nicotine / Wellness', location:'Bangkok, TH', started:'—',
+    badges:[{t:'Not Started',c:'b-gray'},{t:'Idea stage',c:'b-purple'},{t:'10 tasks scoped',c:'b-yellow'}],
+    signals:[
+      {c:'#888780',t:'Idea stage — not yet activated',d:'10 tasks have been scoped but no work has started. Queued behind PAUSA and KNECTD.'},
+      {c:'#EF9F27',t:'Persona and MarCom structure pre-built',d:'MON Persona, Content Pillar, and MarCom pages already exist. Setup overhead is low when ready to start.'},
+      {c:'#378ADD',t:'Linked to two quarterly cycles',d:'Project is tied to Q1 and Q2 2026 quarterly DBs — suggesting planned activation in this period.'},
+    ],
+    okrs:[{t:'Activate project and assign tasks',s:'Not started',sc:'p-gr'},{t:'Define product formulation',s:'Not started',sc:'p-gr'},{t:'Brand and persona defined',s:'Not started',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Q1',v:0},{m:'Q2',v:0},{m:'Q3',v:0}],
+    catSpend:[{l:'R&D',pct:55},{l:'Marketing',pct:33},{l:'Operations',pct:12}],
+    strategy:'Durian-flavoured nicotine pouch targeting Thai wellness and lifestyle consumers. Pre-built brand architecture awaiting activation.',
+    pillars:['Flavour differentiation — durian as a distinctive Thai identity angle.','Wellness framing — nicotine replacement or harm-reduction positioning.','Same brand playbook as PAUSA: persona-first, content-driven launch.'],
+    roadmap:[{q:'Q1–Q2 2026',items:'Queued — awaiting activation'},{q:'Q2–Q3 2026',now:true,items:'Activate·Product R&D·Brand setup'},{q:'Q3 2026',items:'Prototype·Supplier·Go-to-market'},{q:'Q4 2026',items:'Launch-ready product'}],
+  },
+  ai: {
+    type:'Internal Tool · Productivity Infrastructure', location:'Personal', started:'Mar 14, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Internal tool',c:'b-purple'},{t:'High priority',c:'b-red'}],
+    signals:[
+      {c:'#639922',t:'Core concept defined',d:'Notion as knowledge base, AI as analyst/prioritiser, n8n for automation triggers. Architecture scoped.'},
+      {c:'#EF9F27',t:'Voice and real execution not yet built',d:'Voice call and real task execution remain unchecked. These are the two unlock milestones.'},
+      {c:'#378ADD',t:'Multiple agent roles scoped',d:'CFO Lommi, CTO, and personal boundary agent define specialist agent functions.'},
+    ],
+    okrs:[{t:'Core assistant architecture live',s:'In flight',sc:'p-y'},{t:'Voice call capability',s:'Not started',sc:'p-gr'},{t:'Real task execution loop',s:'Not started',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Mar',v:0},{m:'Apr',v:0}],
+    catSpend:[{l:'Technology',pct:75},{l:'Strategy',pct:22},{l:'Operations',pct:3}],
+    strategy:'Personal AI assistant using Notion as knowledge base, Claude/AI for analysis and prioritisation, n8n for automation triggers.',
+    pillars:['Notion = library and knowledge base (human-curated).','AI = analyst, summariser, and perception expander.','n8n = automation triggers connecting both layers.'],
+    roadmap:[{q:'Mar 2026',done:true,items:'Concept defined·Architecture scoped'},{q:'Apr 2026',now:true,items:'Build core assistant·n8n triggers·Agent roles'},{q:'Q3 2026',items:'Voice capability·Real execution loop'},{q:'Q4 2026',items:'Full agentic operation'}],
+  },
+};
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function saveToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+
+async function notionGet(path) {
+  var token = getToken();
+  var res = await fetch('https://api.notion.com/v1/' + path, {
+    headers: { 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' }
+  });
+  if (!res.ok) throw new Error('Notion API error: ' + res.status);
+  return res.json();
+}
+
+async function fetchPageData(pageId) {
+  var data = await notionGet('pages/' + pageId);
+  return data;
+}
+
+function extractTaskCounts(tasks) {
+  var counts = { total: tasks.length, done: 0, inprog: 0, review: 0, backlog: 0 };
+  tasks.forEach(function(t) {
+    var s = (t.properties && t.properties.Status && t.properties.Status.status) ? t.properties.Status.status.name : '';
+    if (s === 'Completed' || s === 'Archived') counts.done++;
+    else if (s === 'In Progress') counts.inprog++;
+    else if (s === 'Review') counts.review++;
+    else counts.backlog++;
+  });
+  return counts;
+}
+
+async function fetchProjectLiveData(pid) {
+  var proj = PROJECTS[pid];
+  try {
+    var page = await notionGet('pages/' + proj.notionId);
+    var props = page.properties || {};
+
+    var taskIds = [];
+    if (props['Master Tasks'] && props['Master Tasks'].relation) {
+      taskIds = props['Master Tasks'].relation.map(function(r){ return r.id; });
+    }
+
+    var tasks = [];
+    var batchSize = 10;
+    for (var i = 0; i < Math.min(taskIds.length, 40); i += batchSize) {
+      var batch = taskIds.slice(i, i + batchSize);
+      var fetched = await Promise.all(batch.map(function(id){ return notionGet('pages/' + id).catch(function(){ return null; }); }));
+      tasks = tasks.concat(fetched.filter(Boolean));
+    }
+
+    var taskCounts = extractTaskCounts(tasks);
+
+    var activeTasks = tasks.filter(function(t) {
+      var s = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
+      return s === 'In Progress' || s === 'Review';
+    }).slice(0, 6).map(function(t) {
+      var name = t.properties && t.properties.Task && t.properties.Task.title ? t.properties.Task.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
+      var status = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
+      var due = t.properties && t.properties['Due Date'] && t.properties['Due Date'].date ? t.properties['Due Date'].date.start : '—';
+      return { n: name, s: status, sc: status === 'In Progress' ? 'p-b' : 'p-y', due: due };
+    });
+
+    var docCount = (props['Document Hub'] && props['Document Hub'].relation) ? props['Document Hub'].relation.length : 0;
+    var crmCount = (props['Master CRM'] && props['Master CRM'].relation) ? props['Master CRM'].relation.length : 0;
+
+    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, lastRefresh: new Date() };
+  } catch(e) {
+    console.error('Error fetching live data:', e);
+    liveData[pid] = null;
+  }
+}
+
+function pill(text, cls) { return '<span class="pill ' + cls + '">' + text + '</span>'; }
+
+function renderDashboard(pid) {
+  var p = PROJECTS[pid];
+  var s = STATIC[pid];
+  var live = liveData[pid];
+
+  var taskCounts = live ? live.taskCounts : { total: '—', done: '—', inprog: '—', review: '—', backlog: '—' };
+  var pctDone = (live && live.taskCounts.total > 0) ? Math.round(live.taskCounts.done / live.taskCounts.total * 100) : 0;
+  var activeTasks = live ? live.activeTasks : [];
+  var docs = live ? live.docs : '—';
+  var crm = live ? live.crm : '—';
+  var lastRefresh = live ? live.lastRefresh.toLocaleTimeString() : 'not loaded';
+
+  var html = '';
+  html += '<div class="header">';
+  html += '<div><div class="eyebrow">' + p.id + ' · Business Intelligence</div>';
+  html += '<div class="proj-title">' + p.name + '</div>';
+  html += '<div class="proj-meta">' + s.type + ' · ' + s.location + (s.started !== '—' ? ' · Started ' + s.started : '') + '</div>';
+  html += '<div class="badges">';
+  s.badges.forEach(function(b){ html += '<span class="badge ' + b.c + '">' + b.t + '</span>'; });
+  html += '</div></div>';
+  html += '<div class="header-right"><div>' + (typeof taskCounts.total === 'number' ? taskCounts.total : '—') + ' tasks</div><div>' + docs + ' documents</div>' + (crm > 0 ? '<div>' + crm + ' CRM contacts</div>' : '') + '<div style="color:var(--text3)">Refreshed ' + lastRefresh + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="tabs">';
+  [{k:'exec',l:'Executive'},{k:'finance',l:'Finance'},{k:'ops',l:'Operations'},{k:'strategy',l:'Strategy'}].forEach(function(t){
+    html += '<div class="tab' + (activeTab===t.k?' active':'') + '" onclick="switchTab(\'' + t.k + '\')">' + t.l + '</div>';
+  });
+  html += '</div>';
+
+  html += '<div id="panel-exec" class="panel' + (activeTab==='exec'?' active':'') + '">';
+  html += '<div class="sl">Health snapshot</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Total tasks</div><div class="mv">' + (taskCounts.total||'—') + '</div><div class="ms">across all workstreams</div></div>';
+  html += '<div class="mc"><div class="ml">Completion rate</div><div class="mv" style="color:#3B6D11">' + pctDone + '%</div><div class="ms">' + (taskCounts.done||0) + ' of ' + (taskCounts.total||'—') + ' done</div></div>';
+  html += '<div class="mc"><div class="ml">In progress</div><div class="mv" style="color:#185FA5">' + (taskCounts.inprog||0) + '</div><div class="ms">active workstreams</div></div>';
+  html += '<div class="mc"><div class="ml">Documents</div><div class="mv">' + docs + '</div><div class="ms">in document hub</div></div>';
+  html += '</div>';
+
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Business signals</div>';
+  s.signals.forEach(function(sig){
+    html += '<div class="signal-row"><div class="sdot" style="background:' + sig.c + '"></div><div><div class="st">' + sig.t + '</div><div class="ss">' + sig.d + '</div></div></div>';
+  });
+  html += '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:10px">';
+  html += '<div class="card" style="margin-bottom:0"><div class="ct">OKRs</div>';
+  s.okrs.forEach(function(o){ html += '<div class="row"><div class="rn">' + o.t + '</div>' + pill(o.s, o.sc) + '</div>'; });
+  html += '</div></div></div></div>';
+
+  html += '<div id="panel-finance" class="panel' + (activeTab==='finance'?' active':'') + '">';
+  html += '<div class="sl">Financial performance</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Total spend</div><div class="mv" style="color:' + (s.spend>0?'#A32D2D':'var(--text3)') + '">฿' + s.spend.toLocaleString() + '</div><div class="ms">' + (s.spend>0?'Q1 logged':'no transactions') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Revenue</div><div class="mv" style="color:' + (s.revenue>0?'#3B6D11':'var(--text3)') + '">฿' + s.revenue.toLocaleString() + '</div><div class="ms">' + (s.revenue>0?'recurring':'pre-revenue') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Burn / mo</div><div class="mv" style="color:' + (s.burn>0?'#854F0B':'var(--text3)') + '">฿' + s.burn.toLocaleString() + '</div><div class="ms">' + (s.burn>0?'avg Q1 2026':'no active burn') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Awaiting reimb.</div><div class="mv" style="color:' + (s.reimb>0?'#854F0B':'var(--text3)') + '">฿' + s.reimb.toLocaleString() + '</div><div class="ms">' + (s.reimb>0?'pending':'none') + '</div></div>';
+  html += '</div>';
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Monthly cash flow</div><div class="cw-md"><canvas id="burnChart"></canvas></div></div>';
+  html += '<div class="card"><div class="ct">Spend allocation</div>';
+  s.catSpend.forEach(function(c){ html += '<div class="bar-row"><div class="bar-lbl">' + c.l + '</div><div class="bar-track"><div class="bar-fill" style="width:' + c.pct + '%;background:#378ADD"></div></div><div class="bar-val">' + c.pct + '%</div></div>'; });
+  html += '</div></div></div>';
+
+  html += '<div id="panel-ops" class="panel' + (activeTab==='ops'?' active':'') + '">';
+  html += '<div class="sl">Task performance</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Completed</div><div class="mv" style="color:#3B6D11">' + (taskCounts.done||0) + '</div><div class="ms">' + pctDone + '% of total</div></div>';
+  html += '<div class="mc"><div class="ml">In progress</div><div class="mv" style="color:#185FA5">' + (taskCounts.inprog||0) + '</div><div class="ms">active now</div></div>';
+  html += '<div class="mc"><div class="ml">Under review</div><div class="mv" style="color:#854F0B">' + (taskCounts.review||0) + '</div><div class="ms">awaiting sign-off</div></div>';
+  html += '<div class="mc"><div class="ml">Backlog</div><div class="mv" style="color:#534AB7">' + (taskCounts.backlog||0) + '</div><div class="ms">not started</div></div>';
+  html += '</div>';
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Active workstreams</div>';
+  if (activeTasks.length > 0) {
+    activeTasks.forEach(function(t){ html += '<div class="row"><div class="rn">' + t.n + '</div>' + pill(t.s, t.sc) + '<div style="font-size:11px;color:var(--text3)">' + t.due + '</div></div>'; });
+  } else {
+    html += '<div style="color:var(--text3);font-size:12px;padding:8px 0">No active tasks — click Refresh to load live data.</div>';
+  }
+  html += '</div>';
+  html += '<div class="card"><div class="ct">Status breakdown</div><div class="cw"><canvas id="taskChart"></canvas></div></div>';
+  html += '</div></div>';
+
+  html += '<div id="panel-strategy" class="panel' + (activeTab==='strategy'?' active':'') + '">';
+  html += '<div class="sl">Positioning</div>';
+  html += '<div class="card"><div class="ct">Value proposition</div>';
+  html += '<div style="border-left:3px solid #378ADD;padding-left:14px;margin-bottom:14px;font-size:14px;font-weight:500;line-height:1.6">' + s.strategy + '</div>';
+  html += '<div class="mg3">';
+  s.pillars.forEach(function(pl, i){ html += '<div class="ic"><div class="it">Pillar ' + (i+1) + '</div><div class="ib">' + pl + '</div></div>'; });
+  html += '</div></div>';
+  html += '<div class="sl">Quarterly roadmap</div><div class="card"><div class="qgrid">';
+  s.roadmap.forEach(function(r){
+    var col = r.now ? '#854F0B' : (r.done ? '#185FA5' : 'var(--text3)');
+    html += '<div class="qcol"><div class="ql" style="color:' + col + '">' + (r.done?'✓ ':'') + r.q + '</div><div class="qi">' + r.items.split('·').join('<br>') + '</div></div>';
+  });
+  html += '</div></div></div>';
+
+  document.getElementById('dashboard-area').innerHTML = html;
+  buildCharts(pid);
+}
+
+function buildCharts(pid) {
+  var s = STATIC[pid];
+  var live = liveData[pid];
+  Object.values(charts).forEach(function(c){ try{ c.destroy(); }catch(e){} });
+  charts = {};
+
+  var bc = document.getElementById('burnChart');
+  if (bc) {
+    charts.burn = new Chart(bc, {
+      type: 'bar',
+      data: {
+        labels: s.monthly.map(function(m){ return m.m; }),
+        datasets: [{ data: s.monthly.map(function(m){ return m.v; }), backgroundColor: s.revenue > 0 ? '#639922' : '#E24B4A', borderRadius: 4, borderWidth: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' ฿'+c.parsed.y.toLocaleString();}}}}, scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:11},callback:function(v){return '฿'+v.toLocaleString();}}}}}
+    });
+  }
+
+  var tc = document.getElementById('taskChart');
+  if (tc) {
+    var t = live ? live.taskCounts : { done:0, inprog:0, review:0, backlog:0 };
+    charts.task = new Chart(tc, {
+      type: 'doughnut',
+      data: { datasets:[{ data:[t.done,t.inprog,t.review,t.backlog], backgroundColor:['#639922','#378ADD','#EF9F27','#7F77DD'], borderWidth:0, hoverOffset:3 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){ return [' Done',' In Progress',' Review',' Backlog'][c.dataIndex]+': '+c.parsed; }}}}}
+    });
+  }
+}
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  event.target.classList.add('active');
+  var panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+  setTimeout(function(){ buildCharts(activeProject); }, 50);
+}
+
+function loadProject(pid) {
+  activeProject = pid;
+  document.querySelectorAll('.project-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelector('[data-pid="' + pid + '"]').classList.add('active');
+  renderDashboard(pid);
+}
+
+async function refreshCurrent() {
+  var btn = document.getElementById('refresh-btn');
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').textContent = 'Refreshing...';
+  try {
+    await fetchProjectLiveData(activeProject);
+    renderDashboard(activeProject);
+    setStatus('Last refreshed: ' + new Date().toLocaleTimeString());
+  } catch(e) {
+    setStatus('Error refreshing — check your Notion token.');
+  }
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Refresh';
+}
+
+function setStatus(msg) {
+  var el = document.getElementById('status-bar');
+  if (el) el.textContent = msg;
+}
+
+function renderTokenForm(errorMsg) {
+  var html = '<div class="token-form">';
+  html += '<h2>Connect to Notion</h2>';
+  html += '<p>Enter your Notion integration token to load live data from your workspace.</p>';
+  if (errorMsg) html += '<div class="error-msg">' + errorMsg + '</div>';
+  html += '<input class="token-input" id="token-input" type="password" placeholder="secret_xxxxxxxxxxxxxxxx" />';
+  html += '<button class="save-btn" onclick="submitToken()">Connect</button>';
+  html += '<p class="token-note">Your token is stored locally in your browser and never sent anywhere except directly to Notion\'s API. Create an integration at notion.so/my-integrations and share your workspace pages with it.</p>';
+  html += '</div>';
+  document.getElementById('root').innerHTML = html;
+}
+
+function submitToken() {
+  var val = document.getElementById('token-input').value.trim();
+  if (!val.startsWith('secret_') && !val.startsWith('ntn_')) {
+    renderTokenForm('Token should start with secret_ or ntn_');
+    return;
+  }
+  saveToken(val);
+  init();
+}
+
+function renderShell() {
+  var html = '<div class="topbar">';
+  html += '<div class="topbar-left">';
+  html += '<span class="logo">BI Dashboard <span>· Workspace</span></span>';
+  html += '<div class="project-bar">';
+  Object.keys(PROJECTS).forEach(function(pid){
+    html += '<button class="project-btn' + (pid===activeProject?' active':'') + '" data-pid="' + pid + '" onclick="loadProject(\'' + pid + '\')">' + PROJECTS[pid].name + '</button>';
+  });
+  html += '</div></div>';
+  html += '<button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()"><div class="spinner"></div><span class="btn-label">Refresh</span></button>';
+  html += '</div>';
+  html += '<div class="status-bar" id="status-bar">Click Refresh to load live data from Notion.</div>';
+  html += '<div id="dashboard-area"></div>';
+  document.getElementById('root').innerHTML = html;
+  renderDashboard(activeProject);
+}
+
+async function init() {
+  var token = getToken();
+  if (!token) { renderTokenForm(); return; }
+
+  document.getElementById('root').innerHTML = '<div class="loading-screen"><div class="big-spinner"></div><p>Connecting to Notion...</p></div>';
+
+  try {
+    await notionGet('users/me');
+  } catch(e) {
+    localStorage.removeItem(TOKEN_KEY);
+    renderTokenForm('Could not connect — token may be invalid or expired.');
+    return;
+  }
+
+  renderShell();
+}
+
+init();
+</script>
+</body>
+</html>
