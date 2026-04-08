@@ -11,13 +11,20 @@ export default {
     const notionUrl = 'https://api.notion.com' + url.pathname + url.search;
     const res = await fetch(notionUrl, {
       method: request.method,
-      headers: { ...Object.fromEntries(request.headers), 'Notion-Version': '2022-06-28' },
+      headers: {
+        'Authorization': request.headers.get('Authorization') || '',
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28'
+      },
       body: request.method !== 'GET' ? request.body : undefined,
     });
     const body = await res.text();
-    return new Response(body, { status: res.status, headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }});
+    return new Response(body, {
+      status: res.status,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 }
