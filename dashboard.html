@@ -276,6 +276,58 @@ function extractTaskCounts(tasks) {
   return counts;
 }
 
+async function fetchOKRData(pid) {
+  var proj = PROJECTS[pid];
+  var QUARTERLY_DB = '2f67286d055f80c0a29cf989583a20f3';
+  try {
+    var cleanId = proj.notionId.replace(/-/g, '');
+    var res = await fetch('/v1/databases/' + QUARTERLY_DB + '/query', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
+      body: JSON.stringify({
+        filter: { property: 'Master Project Dashboard', relation: { contains: cleanId } },
+        sorts: [{ property: 'Quarter', direction: 'descending' }],
+        page_size: 10
+      })
+    });
+    var data = await res.json();
+    if (!data.results || data.results.length === 0) return [];
+
+    var okrs = [];
+    for (var i = 0; i < Math.min(data.results.length, 3); i++) {
+      var page = data.results[i];
+      var props = page.properties || {};
+      var quarter = props.Quarter && props.Quarter.select ? props.Quarter.select.name : '';
+      var name = props.Name && props.Name.title ? props.Name.title.map(function(r){ return r.plain_text; }).join('') : '';
+
+      var pageRes = await fetch('/v1/blocks/' + page.id.replace(/-/g,'') + '/children', {
+        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' }
+      });
+      var pageData = await pageRes.json();
+      var goals = [];
+      if (pageData.results) {
+        pageData.results.forEach(function(block) {
+          var type = block.type;
+          if (type === 'numbered_list_item' || type === 'bulleted_list_item') {
+            var rich = block[type] && block[type].rich_text ? block[type].rich_text : [];
+            var text = rich.map(function(r){ return r.plain_text; }).join('');
+            if (text) goals.push({ text: text, checked: false });
+          } else if (type === 'to_do') {
+            var rich = block.to_do && block.to_do.rich_text ? block.to_do.rich_text : [];
+            var text = rich.map(function(r){ return r.plain_text; }).join('');
+            if (text) goals.push({ text: text, checked: block.to_do.checked || false });
+          }
+        });
+      }
+      if (goals.length > 0) okrs.push({ quarter: quarter, name: name, goals: goals });
+    }
+    return okrs;
+  } catch(e) {
+    console.error('OKR fetch error:', e);
+    return [];
+  }
+}
+
 async function fetchFinanceData(pid) {
   var proj = PROJECTS[pid];
   var FINANCE_DB = '2fc7286d055f812d85b6fc8a4ca87d4d';
@@ -390,8 +442,9 @@ async function fetchProjectLiveData(pid) {
     });
 
     var finance = await fetchFinanceData(pid);
+    var okrs = await fetchOKRData(pid);
 
-    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, finance: finance, lastRefresh: new Date() };
+    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, finance: finance, okrs: okrs, lastRefresh: new Date() };
   } catch(e) {
     console.error('Error fetching live data:', e);
     liveData[pid] = null;
