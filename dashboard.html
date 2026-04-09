@@ -278,7 +278,7 @@ function extractTaskCounts(tasks) {
 
 async function fetchFinanceData(pid) {
   var proj = PROJECTS[pid];
-  var FINANCE_DB = '2fc7286d-055f-81d5-981a-000ba1f8976d';
+  var FINANCE_DB = '2fc7286d055f812d85b6fc8a4ca87d4d';
   try {
     var spend = 0, revenue = 0, investment = 0, loan = 0, reimb = 0;
     var monthly = {};
@@ -314,7 +314,7 @@ async function fetchFinanceData(pid) {
         var type = p.Type && p.Type.select ? p.Type.select.name : '';
         var status = p.Status && p.Status.status ? p.Status.status.name : '';
         var name = p.Transaction && p.Transaction.title ? p.Transaction.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
-        var dateVal = p.Date && p.Date.date ? p.Date.date.start : '';
+        var dateVal = (p['Date'] && p['Date'].date ? p['Date'].date.start : '');
         var cat = p.Category && p.Category.select ? p.Category.select.name : '';
 
         if (type === 'Expense') spend += amount;
