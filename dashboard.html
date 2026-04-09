@@ -276,6 +276,60 @@ function extractTaskCounts(tasks) {
   return counts;
 }
 
+async function fetchFinanceData(pid) {
+  var proj = PROJECTS[pid];
+  try {
+    var page = await notionGet('pages/' + proj.notionId);
+    var props = page.properties || {};
+    var financeIds = [];
+    if (props['Finance'] && props['Finance'].relation) {
+      financeIds = props['Finance'].relation.map(function(r){ return r.id; });
+    }
+    if (financeIds.length === 0) return { spend:0, revenue:0, investment:0, loan:0, reimb:0, txns:[], monthly:{} };
+
+    var txns = [];
+    for (var i = 0; i < Math.min(financeIds.length, 50); i += 10) {
+      var batch = financeIds.slice(i, i+10);
+      var fetched = await Promise.all(batch.map(function(id){ return notionGet('pages/'+id).catch(function(){ return null; }); }));
+      txns = txns.concat(fetched.filter(Boolean));
+    }
+
+    var spend = 0, revenue = 0, investment = 0, loan = 0, reimb = 0;
+    var monthly = {};
+    var txnList = [];
+
+    txns.forEach(function(t) {
+      var p = t.properties || {};
+      var amount = p.Amount && p.Amount.number ? p.Amount.number : 0;
+      var type = p.Type && p.Type.select ? p.Type.select.name : '';
+      var status = p.Status && p.Status.status ? p.Status.status.name : '';
+      var name = p.Transaction && p.Transaction.title ? p.Transaction.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
+      var date = p['date:Date:start'] || '';
+      var cat = p.Category && p.Category.select ? p.Category.select.name : '';
+
+      if (type === 'Expense') spend += amount;
+      else if (type === 'Revenue') revenue += amount;
+      else if (type === 'Investment') investment += amount;
+      else if (type === 'Loan') loan += amount;
+      if (status === 'Awaiting Reimbursement') reimb += amount;
+
+      if (date) {
+        var month = date.substring(0,7);
+        if (!monthly[month]) monthly[month] = {expense:0, revenue:0};
+        if (type === 'Expense') monthly[month].expense += amount;
+        else if (type === 'Revenue') monthly[month].revenue += amount;
+      }
+
+      txnList.push({ n: name, amount: amount, type: type, status: status, cat: cat, date: date });
+    });
+
+    return { spend: spend, revenue: revenue, investment: investment, loan: loan, reimb: reimb, txns: txnList, monthly: monthly };
+  } catch(e) {
+    console.error('Finance fetch error:', e);
+    return { spend:0, revenue:0, investment:0, loan:0, reimb:0, txns:[], monthly:{} };
+  }
+}
+
 async function fetchProjectLiveData(pid) {
   var proj = PROJECTS[pid];
   try {
@@ -310,7 +364,9 @@ async function fetchProjectLiveData(pid) {
     var docCount = (props['Document Hub'] && props['Document Hub'].relation) ? props['Document Hub'].relation.length : 0;
     var crmCount = (props['Master CRM'] && props['Master CRM'].relation) ? props['Master CRM'].relation.length : 0;
 
-    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, lastRefresh: new Date() };
+    var finance = await fetchFinanceData(pid);
+
+    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, finance: finance, lastRefresh: new Date() };
   } catch(e) {
     console.error('Error fetching live data:', e);
     liveData[pid] = null;
@@ -368,19 +424,39 @@ function renderDashboard(pid) {
   s.okrs.forEach(function(o){ html += '<div class="row"><div class="rn">' + o.t + '</div>' + pill(o.s, o.sc) + '</div>'; });
   html += '</div></div></div></div>';
 
+  var lf = (live && live.finance) ? live.finance : null;
+  var fSpend = lf ? Math.round(lf.spend) : 0;
+  var fRev = lf ? Math.round(lf.revenue) : 0;
+  var fReim = lf ? Math.round(lf.reimb) : 0;
+  var fTxns = lf ? lf.txns : [];
+  var fMonthly = lf ? lf.monthly : {};
+  var fLoaded = lf !== null;
+  var netPL = fRev - fSpend;
+
   html += '<div id="panel-finance" class="panel' + (activeTab==='finance'?' active':'') + '">';
-  html += '<div class="sl">Financial performance</div>';
+  html += '<div class="sl">Financial performance · ' + (fLoaded ? 'live from Notion' : 'click Refresh to load') + '</div>';
   html += '<div class="mg">';
-  html += '<div class="mc"><div class="ml">Total spend</div><div class="mv" style="color:' + (s.spend>0?'#A32D2D':'var(--text3)') + '">฿' + s.spend.toLocaleString() + '</div><div class="ms">' + (s.spend>0?'Q1 logged':'no transactions') + '</div></div>';
-  html += '<div class="mc"><div class="ml">Revenue</div><div class="mv" style="color:' + (s.revenue>0?'#3B6D11':'var(--text3)') + '">฿' + s.revenue.toLocaleString() + '</div><div class="ms">' + (s.revenue>0?'recurring':'pre-revenue') + '</div></div>';
-  html += '<div class="mc"><div class="ml">Burn / mo</div><div class="mv" style="color:' + (s.burn>0?'#854F0B':'var(--text3)') + '">฿' + s.burn.toLocaleString() + '</div><div class="ms">' + (s.burn>0?'avg Q1 2026':'no active burn') + '</div></div>';
-  html += '<div class="mc"><div class="ml">Awaiting reimb.</div><div class="mv" style="color:' + (s.reimb>0?'#854F0B':'var(--text3)') + '">฿' + s.reimb.toLocaleString() + '</div><div class="ms">' + (s.reimb>0?'pending':'none') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Total expenses</div><div class="mv" style="color:' + (fSpend>0?'#A32D2D':'var(--text3)') + '">฿' + fSpend.toLocaleString() + '</div><div class="ms">' + fTxns.length + ' transactions</div></div>';
+  html += '<div class="mc"><div class="ml">Revenue</div><div class="mv" style="color:' + (fRev>0?'#3B6D11':'var(--text3)') + '">฿' + fRev.toLocaleString() + '</div><div class="ms">' + (fRev>0?'total logged':'pre-revenue') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Net P&L</div><div class="mv" style="color:' + (netPL>=0?'#3B6D11':'#A32D2D') + '">' + (netPL>=0?'+':'') + '฿' + Math.abs(netPL).toLocaleString() + '</div><div class="ms">' + (netPL>=0?'surplus':'deficit') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Awaiting reimb.</div><div class="mv" style="color:' + (fReim>0?'#854F0B':'var(--text3)') + '">฿' + fReim.toLocaleString() + '</div><div class="ms">' + (fReim>0?'pending':'none') + '</div></div>';
   html += '</div>';
   html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Transaction ledger</div>';
+  if (fTxns.length > 0) {
+    fTxns.slice(0,8).forEach(function(t) {
+      var amtColor = t.type==='Revenue' ? '#3B6D11' : '#A32D2D';
+      var amtPrefix = t.type==='Revenue' ? '+' : '−';
+      var sc = t.status==='Completed'?'p-g':t.status==='Awaiting Reimbursement'?'p-y':t.status==='Pending'?'p-gr':'p-b';
+      html += '<div class="row"><div class="rn">' + t.n + '<span style="font-size:11px;color:var(--text3);margin-left:6px;">' + (t.cat||t.type) + '</span></div><span class="pill '+sc+'">'+t.status+'</span><div style="font-size:12px;font-weight:500;color:'+amtColor+';">'+amtPrefix+'฿'+Math.round(t.amount).toLocaleString()+'</div></div>';
+    });
+    if (fTxns.length > 8) html += '<div style="font-size:11px;color:var(--text3);padding:8px 0">+ ' + (fTxns.length-8) + ' more transactions</div>';
+  } else {
+    html += '<div style="color:var(--text3);font-size:12px;padding:8px 0">' + (fLoaded ? 'No transactions linked to this project.' : 'Click Refresh to load finance data.') + '</div>';
+  }
+  html += '</div>';
   html += '<div class="card"><div class="ct">Monthly cash flow</div><div class="cw-md"><canvas id="burnChart"></canvas></div></div>';
-  html += '<div class="card"><div class="ct">Spend allocation</div>';
-  s.catSpend.forEach(function(c){ html += '<div class="bar-row"><div class="bar-lbl">' + c.l + '</div><div class="bar-track"><div class="bar-fill" style="width:' + c.pct + '%;background:#378ADD"></div></div><div class="bar-val">' + c.pct + '%</div></div>'; });
-  html += '</div></div></div>';
+  html += '</div></div>';
 
   html += '<div id="panel-ops" class="panel' + (activeTab==='ops'?' active':'') + '">';
   html += '<div class="sl">Task performance</div>';
