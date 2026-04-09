@@ -287,10 +287,11 @@ async function fetchFinanceData(pid) {
     var cursor = null;
 
     while (hasMore) {
+      var cleanId = proj.notionId.replace(/-/g, '');
       var body = {
         filter: {
           property: 'Master Project Dashboard',
-          relation: { contains: proj.notionId }
+          relation: { contains: cleanId }
         },
         page_size: 50
       };
