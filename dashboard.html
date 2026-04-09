@@ -348,21 +348,33 @@ async function fetchFinanceData(pid) {
 
 async function fetchProjectLiveData(pid) {
   var proj = PROJECTS[pid];
+  var TASKS_DB = '2fc7286d055f816abd4fe98440f1ed86';
   try {
     var page = await notionGet('pages/' + proj.notionId);
     var props = page.properties || {};
+    var docCount = (props['Document Hub'] && props['Document Hub'].relation) ? props['Document Hub'].relation.length : 0;
+    var crmCount = (props['Master CRM'] && props['Master CRM'].relation) ? props['Master CRM'].relation.length : 0;
 
-    var taskIds = [];
-    if (props['Master Tasks'] && props['Master Tasks'].relation) {
-      taskIds = props['Master Tasks'].relation.map(function(r){ return r.id; });
-    }
-
+    var cleanId = proj.notionId.replace(/-/g, '');
     var tasks = [];
-    var batchSize = 10;
-    for (var i = 0; i < Math.min(taskIds.length, 40); i += batchSize) {
-      var batch = taskIds.slice(i, i + batchSize);
-      var fetched = await Promise.all(batch.map(function(id){ return notionGet('pages/' + id).catch(function(){ return null; }); }));
-      tasks = tasks.concat(fetched.filter(Boolean));
+    var hasMore = true;
+    var cursor = null;
+    while (hasMore) {
+      var body = {
+        filter: { property: 'Parent Project', relation: { contains: cleanId } },
+        page_size: 100
+      };
+      if (cursor) body.start_cursor = cursor;
+      var res = await fetch('/v1/databases/' + TASKS_DB + '/query', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
+        body: JSON.stringify(body)
+      });
+      var data = await res.json();
+      if (!data.results) break;
+      tasks = tasks.concat(data.results);
+      hasMore = data.has_more;
+      cursor = data.next_cursor;
     }
 
     var taskCounts = extractTaskCounts(tasks);
@@ -370,15 +382,12 @@ async function fetchProjectLiveData(pid) {
     var activeTasks = tasks.filter(function(t) {
       var s = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
       return s === 'In Progress' || s === 'Review';
-    }).slice(0, 6).map(function(t) {
+    }).slice(0, 8).map(function(t) {
       var name = t.properties && t.properties.Task && t.properties.Task.title ? t.properties.Task.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
       var status = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
       var due = t.properties && t.properties['Due Date'] && t.properties['Due Date'].date ? t.properties['Due Date'].date.start : '—';
       return { n: name, s: status, sc: status === 'In Progress' ? 'p-b' : 'p-y', due: due };
     });
-
-    var docCount = (props['Document Hub'] && props['Document Hub'].relation) ? props['Document Hub'].relation.length : 0;
-    var crmCount = (props['Master CRM'] && props['Master CRM'].relation) ? props['Master CRM'].relation.length : 0;
 
     var finance = await fetchFinanceData(pid);
 
