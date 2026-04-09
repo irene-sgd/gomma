@@ -156,7 +156,7 @@ var STATIC = {
       {c:'#EF9F27',t:'Pitch deck update overdue',d:'Cacao powder pivot deck (TSK-246) was due Apr 2. Budget, pricing, and TAMSAMSOM slides outstanding.'},
       {c:'#E24B4A',t:'Zero revenue · pre-investment stage',d:'฿6,400 spent, ฿0 in. Funding round and first B2B client are the Q2 unlock conditions.'},
     ],
-    okrs:[{t:'Secure KNECTD deal (฿35k/mo)',s:'Done',sc:'p-g'},{t:'Land first B2B client via GOMMA',s:'In flight',sc:'p-y'},{t:'Pitch deck ready for investors',s:'Q2',sc:'p-b'}],
+    okrs:[{t:'Pausa gets funding',s:'In Progress',sc:'p-y'},{t:'Pitch deck ready for investors',s:'In Progress',sc:'p-y'},{t:'First B2B client signed',s:'Not Started',sc:'p-gr'}],
     spend:6400, revenue:0, burn:2133, reimb:740,
     monthly:[{m:'Jan',v:338},{m:'Feb',v:420},{m:'Mar',v:5402},{m:'Apr',v:240}],
     catSpend:[{l:'Raw Material',pct:71},{l:'Office',pct:12},{l:'Admin',pct:11},{l:'Software',pct:7}],
@@ -501,7 +501,7 @@ function renderDashboard(pid) {
   var netPL = fRev - fSpend;
 
   html += '<div id="panel-finance" class="panel' + (activeTab==='finance'?' active':'') + '">';
-  html += '<div class="sl">Financial performance · ' + (fLoaded ? 'live from Notion' : 'click Refresh to load') + '</div>';
+  html += '<div class="sl">Financial performance</div>';
   html += '<div class="mg">';
   html += '<div class="mc"><div class="ml">Total expenses</div><div class="mv" style="color:' + (fSpend>0?'#A32D2D':'var(--text3)') + '">฿' + fSpend.toLocaleString() + '</div><div class="ms">' + fTxns.length + ' transactions</div></div>';
   html += '<div class="mc"><div class="ml">Revenue</div><div class="mv" style="color:' + (fRev>0?'#3B6D11':'var(--text3)') + '">฿' + fRev.toLocaleString() + '</div><div class="ms">' + (fRev>0?'total logged':'pre-revenue') + '</div></div>';
