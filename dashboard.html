@@ -278,51 +278,66 @@ function extractTaskCounts(tasks) {
 
 async function fetchFinanceData(pid) {
   var proj = PROJECTS[pid];
+  var FINANCE_DB = '2fc7286d-055f-81d5-981a-000ba1f8976d';
   try {
-    var page = await notionGet('pages/' + proj.notionId);
-    var props = page.properties || {};
-    var financeIds = [];
-    if (props['Finance'] && props['Finance'].relation) {
-      financeIds = props['Finance'].relation.map(function(r){ return r.id; });
-    }
-    if (financeIds.length === 0) return { spend:0, revenue:0, investment:0, loan:0, reimb:0, txns:[], monthly:{} };
-
-    var txns = [];
-    for (var i = 0; i < Math.min(financeIds.length, 50); i += 10) {
-      var batch = financeIds.slice(i, i+10);
-      var fetched = await Promise.all(batch.map(function(id){ return notionGet('pages/'+id).catch(function(){ return null; }); }));
-      txns = txns.concat(fetched.filter(Boolean));
-    }
-
     var spend = 0, revenue = 0, investment = 0, loan = 0, reimb = 0;
     var monthly = {};
     var txnList = [];
+    var hasMore = true;
+    var cursor = null;
 
-    txns.forEach(function(t) {
-      var p = t.properties || {};
-      var amount = p.Amount && p.Amount.number ? p.Amount.number : 0;
-      var type = p.Type && p.Type.select ? p.Type.select.name : '';
-      var status = p.Status && p.Status.status ? p.Status.status.name : '';
-      var name = p.Transaction && p.Transaction.title ? p.Transaction.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
-      var date = p['date:Date:start'] || '';
-      var cat = p.Category && p.Category.select ? p.Category.select.name : '';
+    while (hasMore) {
+      var body = {
+        filter: {
+          property: 'Master Project Dashboard',
+          relation: { contains: proj.notionId }
+        },
+        page_size: 50
+      };
+      if (cursor) body.start_cursor = cursor;
 
-      if (type === 'Expense') spend += amount;
-      else if (type === 'Revenue') revenue += amount;
-      else if (type === 'Investment') investment += amount;
-      else if (type === 'Loan') loan += amount;
-      if (status === 'Awaiting Reimbursement') reimb += amount;
+      var res = await fetch('/v1/databases/' + FINANCE_DB + '/query', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + getToken(),
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(body)
+      });
+      var data = await res.json();
+      if (!data.results) break;
 
-      if (date) {
-        var month = date.substring(0,7);
-        if (!monthly[month]) monthly[month] = {expense:0, revenue:0};
-        if (type === 'Expense') monthly[month].expense += amount;
-        else if (type === 'Revenue') monthly[month].revenue += amount;
-      }
+      data.results.forEach(function(t) {
+        var p = t.properties || {};
+        var amount = p.Amount && p.Amount.number ? p.Amount.number : 0;
+        var type = p.Type && p.Type.select ? p.Type.select.name : '';
+        var status = p.Status && p.Status.status ? p.Status.status.name : '';
+        var name = p.Transaction && p.Transaction.title ? p.Transaction.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
+        var dateVal = p.Date && p.Date.date ? p.Date.date.start : '';
+        var cat = p.Category && p.Category.select ? p.Category.select.name : '';
 
-      txnList.push({ n: name, amount: amount, type: type, status: status, cat: cat, date: date });
-    });
+        if (type === 'Expense') spend += amount;
+        else if (type === 'Revenue') revenue += amount;
+        else if (type === 'Investment') investment += amount;
+        else if (type === 'Loan') loan += amount;
+        if (status === 'Awaiting Reimbursement') reimb += amount;
 
+        if (dateVal) {
+          var month = dateVal.substring(0,7);
+          if (!monthly[month]) monthly[month] = {expense:0, revenue:0};
+          if (type === 'Expense') monthly[month].expense += amount;
+          else if (type === 'Revenue') monthly[month].revenue += amount;
+        }
+
+        txnList.push({ n: name, amount: amount, type: type, status: status, cat: cat, date: dateVal });
+      });
+
+      hasMore = data.has_more;
+      cursor = data.next_cursor;
+    }
+
+    txnList.sort(function(a,b){ return b.date > a.date ? 1 : -1; });
     return { spend: spend, revenue: revenue, investment: investment, loan: loan, reimb: reimb, txns: txnList, monthly: monthly };
   } catch(e) {
     console.error('Finance fetch error:', e);
