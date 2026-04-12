@@ -2,6 +2,7 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
+    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         headers: {
@@ -12,6 +13,19 @@ export default {
       });
     }
 
+    // Serve dashboard at root by fetching from GitHub Pages
+    if (url.pathname === '/' || url.pathname === '' || url.pathname === '/dashboard.html') {
+      const html = await fetch('https://irene-sgd.github.io/gomma/dashboard.html');
+      const body = await html.text();
+      return new Response(body, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache'
+        }
+      });
+    }
+
+    // Proxy Notion API calls
     if (url.pathname.startsWith('/v1/')) {
       const notionUrl = 'https://api.notion.com' + url.pathname + url.search;
       const res = await fetch(notionUrl, {
