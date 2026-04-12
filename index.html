@@ -3,308 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOMMA — Liquid</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+<title>GOMMA — Creative Studio</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%;
-    background: #080810;
-    overflow: hidden;
-    font-family: 'Montserrat', sans-serif;
-  }
-  #stage { display: block; position: fixed; top: 0; left: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  #spline-container { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  spline-viewer { width: 100%; height: 100%; display: block; }
 
   #ui {
     position: fixed;
-    bottom: 36px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
+    inset: 0;
     z-index: 10;
-  }
-  .btn {
-    padding: 10px 22px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.04);
-    color: rgba(255,255,255,0.5);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(8px);
-  }
-  .btn:hover, .btn.active {
-    border-color: rgba(255,255,255,0.5);
-    color: rgba(255,255,255,0.9);
-    background: rgba(255,255,255,0.08);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 2rem 2.5rem;
   }
 
-  #hint {
-    position: fixed;
-    top: 36px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;
-    letter-spacing: 4px;
-    color: rgba(255,255,255,0.2);
-    text-transform: uppercase;
-    pointer-events: none;
-    z-index: 10;
-    transition: opacity 1s;
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    pointer-events: all;
+  }
+
+  nav a {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.15s;
+  }
+
+  nav a:hover { color: white; }
+
+  nav a.cta {
+    color: white;
+    background: rgba(255,255,255,0.1);
+    border: 0.5px solid rgba(255,255,255,0.2);
+    padding: 7px 18px;
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background 0.15s;
+  }
+
+  nav a.cta:hover { background: rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
 
-<canvas id="stage"></canvas>
-
-<div id="hint">Move cursor &nbsp;/&nbsp; Touch to distort</div>
-
-<div id="ui">
-  <button class="btn active" data-mode="0">Liquid</button>
-  <button class="btn" data-mode="1">Ripple</button>
-  <button class="btn" data-mode="2">Warp</button>
-  <button class="btn" data-mode="3">Chaos</button>
+<div id="spline-container">
+  <spline-viewer url="https://prod.spline.design/gomma-9VwcRkdJBkUzvQrYCEhjkFDU-jpQ/scene.splinecode"></spline-viewer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.12/pixi.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<div id="ui">
+  <div id="topbar">
+    <svg width="90" height="14" viewBox="0 0 106 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.5688 9.00771C16.5548 9.96744 16.3661 10.8723 16.0025 11.7224C15.639 12.5587 15.1217 13.2991 14.4505 13.9434C13.7794 14.5878 12.9614 15.0951 11.9967 15.4653C11.0459 15.8218 9.95528 16 8.72485 16C7.48044 16 6.32691 15.8149 5.26427 15.4447C4.20163 15.0746 3.27182 14.5467 2.47484 13.8612C1.69184 13.162 1.08362 12.3188 0.650169 11.3316C0.216723 10.3445 0 9.23393 0 8C0 6.76607 0.216723 5.65553 0.650169 4.66838C1.0976 3.68123 1.7198 2.8449 2.51678 2.15938C3.31377 1.46015 4.25057 0.92545 5.32719 0.55527C6.40382 0.18509 7.58531 0 8.87166 0C10.4796 0 11.8848 0.260497 13.0873 0.781492C14.3037 1.28878 15.2825 1.988 16.0235 2.87918C16.7646 3.77035 17.219 4.79177 17.3868 5.94345H14.5764C14.4226 5.2168 14.087 4.58612 13.5697 4.05141C13.0663 3.51671 12.4161 3.1054 11.6192 2.81748C10.8222 2.52956 9.89935 2.38561 8.85069 2.38561C7.62026 2.38561 6.55063 2.61183 5.64179 3.06427C4.74693 3.503 4.04783 4.14053 3.54447 4.97686C3.0551 5.8132 2.81041 6.82091 2.81041 8C2.81041 9.17909 3.06209 10.1937 3.56544 11.0437C4.08278 11.8937 4.80985 12.545 5.74666 12.9974C6.68346 13.4499 7.78805 13.6761 9.06042 13.6761C10.2908 13.6761 11.3675 13.4704 12.2903 13.0591C13.2131 12.6478 13.9402 12.0788 14.4715 11.3522C15.0028 10.6118 15.2895 9.75493 15.3314 8.78149L16.5688 9.00771ZM9.60572 10.1799V8.12339H17.5546V15.7121H15.4992L15.1636 9.3162L15.8138 10.1799H9.60572Z" fill="white"/>
+      <path d="M34.4231 0H37.2125L22.8249 16H20.0355L34.4231 0ZM28.6135 16C26.8238 16 25.2508 15.6641 23.8945 14.9923C22.5522 14.3205 21.5036 13.3882 20.7486 12.1954C19.9935 10.9889 19.616 9.5904 19.616 8C19.616 6.4096 19.9935 5.018 20.7486 3.82519C21.5036 2.61868 22.5522 1.67952 23.8945 1.00771C25.2508 0.335904 26.8238 0 28.6135 0C29.8999 0 31.0883 0.191945 32.1789 0.575835C33.2835 0.959727 34.2413 1.50814 35.0523 2.22108C35.8632 2.92031 36.4924 3.7635 36.9399 4.75064C37.4013 5.72408 37.632 6.8072 37.632 8C37.632 9.5904 37.2545 10.9889 36.4994 12.1954C35.7444 13.3882 34.6887 14.3205 33.3325 14.9923C31.9762 15.6641 30.4032 16 28.6135 16ZM28.6135 13.5733C29.8859 13.5733 30.9835 13.347 31.9063 12.8946C32.8291 12.4422 33.5422 11.7978 34.0456 10.9614C34.5629 10.1251 34.8216 9.13796 34.8216 8C34.8216 6.86204 34.5629 5.87489 34.0456 5.03856C33.5422 4.20223 32.8291 3.55784 31.9063 3.1054C30.9835 2.65296 29.8859 2.42674 28.6135 2.42674C27.3551 2.42674 26.2575 2.65296 25.3207 3.1054C24.3979 3.55784 23.6848 4.20223 23.1814 5.03856C22.6781 5.87489 22.4264 6.86204 22.4264 8C22.4264 9.13796 22.6781 10.1251 23.1814 10.9614C23.6848 11.7978 24.3979 12.4422 25.3207 12.8946C26.2575 13.347 27.3551 13.5733 28.6135 13.5733Z" fill="white"/>
+      <path d="M61.2743 0.287918V15.7121H58.6317V1.11054L59.4916 1.15167L52.172 15.7121H49.2147L41.8951 1.17224L42.755 1.13111V15.7121H40.1124V0.287918H44.349L51.396 14.5398H50.0117L57.0377 0.287918H61.2743Z" fill="white"/>
+      <path d="M85.745 0.287918V15.7121H83.1023V1.11054L83.9622 1.15167L76.6426 15.7121H73.6854L66.3657 1.17224L67.2256 1.13111V15.7121H64.583V0.287918H68.8196L75.8666 14.5398H74.4824L81.5084 0.287918H85.745Z" fill="white"/>
+      <path d="M91.151 12.1748V9.93316H102.141V12.1748H91.151ZM98.4497 0.287918L106 15.7121H103.043L96.1845 1.3162H97.2542L90.396 15.7121H87.4387L94.9891 0.287918H98.4497Z" fill="white"/>
+    </svg>
+    <nav>
+      <a href="https://dashboard.gomma.cc" class="cta">Login</a>
+    </nav>
+  </div>
+</div>
 
-<script>
-// ─── CONFIG ─────────────────────────────────────────────────────────────────
-const MODES = [
-  { name: 'Liquid',  scaleIdle: 18,  scaleHover: 90,  speed: 1.2,  blurPasses: 5 },
-  { name: 'Ripple',  scaleIdle: 40,  scaleHover: 60,  speed: 3.5,  blurPasses: 2 },
-  { name: 'Warp',    scaleIdle: 8,   scaleHover: 140, speed: 0.4,  blurPasses: 7 },
-  { name: 'Chaos',   scaleIdle: 60,  scaleHover: 200, speed: 6.0,  blurPasses: 1 },
-];
-let currentMode = 0;
-
-// ─── PIXI SETUP ──────────────────────────────────────────────────────────────
-const W = window.innerWidth;
-const H = window.innerHeight;
-
-const app = new PIXI.Application({
-  view: document.getElementById('stage'),
-  width: W, height: H,
-  backgroundColor: 0x080810,
-  antialias: true,
-  resolution: window.devicePixelRatio || 1,
-  autoDensity: true,
-});
-
-// ─── SMOOTH NOISE TEXTURE ────────────────────────────────────────────────────
-function buildNoiseCanvas(size, blurPasses) {
-  // Step 1: tiny random noise
-  const tiny = document.createElement('canvas');
-  tiny.width = 64; tiny.height = 64;
-  const tc = tiny.getContext('2d');
-  const id = tc.createImageData(64, 64);
-  for (let i = 0; i < id.data.length; i += 4) {
-    const v = Math.floor(Math.random() * 255);
-    id.data[i] = v; id.data[i+1] = v; id.data[i+2] = v; id.data[i+3] = 255;
-  }
-  tc.putImageData(id, 0, 0);
-
-  // Step 2: scale up with smoothing (blur via downscale/upscale cycles)
-  let src = tiny;
-  for (let p = 0; p < blurPasses; p++) {
-    const half = document.createElement('canvas');
-    half.width = Math.max(4, src.width / 2);
-    half.height = Math.max(4, src.height / 2);
-    const hc = half.getContext('2d');
-    hc.imageSmoothingEnabled = true;
-    hc.imageSmoothingQuality = 'high';
-    hc.drawImage(src, 0, 0, half.width, half.height);
-    src = half;
-  }
-
-  const big = document.createElement('canvas');
-  big.width = size; big.height = size;
-  const bc = big.getContext('2d');
-  bc.imageSmoothingEnabled = true;
-  bc.imageSmoothingQuality = 'high';
-  bc.drawImage(src, 0, 0, size, size);
-  return big;
-}
-
-// ─── BACKGROUND ──────────────────────────────────────────────────────────────
-const mainContainer = new PIXI.Container();
-app.stage.addChild(mainContainer);
-
-// Dark base
-const bg = new PIXI.Graphics();
-bg.beginFill(0x080810); bg.drawRect(0, 0, W, H); bg.endFill();
-mainContainer.addChild(bg);
-
-// Soft coloured aura blobs
-const auras = [
-  { x: 0.25, y: 0.45, rx: 0.45, ry: 0.55, color: 0x1a0836, alpha: 0.9 },
-  { x: 0.75, y: 0.55, rx: 0.40, ry: 0.50, color: 0x00153a, alpha: 0.8 },
-  { x: 0.50, y: 0.20, rx: 0.30, ry: 0.38, color: 0x240a20, alpha: 0.7 },
-  { x: 0.50, y: 0.80, rx: 0.35, ry: 0.28, color: 0x0a1a30, alpha: 0.6 },
-];
-auras.forEach(a => {
-  const g = new PIXI.Graphics();
-  g.beginFill(a.color, a.alpha);
-  g.drawEllipse(W * a.x, H * a.y, W * a.rx, H * a.ry);
-  g.endFill();
-  mainContainer.addChild(g);
-});
-
-// ─── TEXT ─────────────────────────────────────────────────────────────────────
-const fontSize = Math.min(W * 0.22, 220);
-
-const titleStyle = new PIXI.TextStyle({
-  fontFamily: 'Bebas Neue',
-  fontSize,
-  fill: '#ffffff',
-  letterSpacing: 18,
-});
-
-const title = new PIXI.Text('GOMMA', titleStyle);
-title.anchor.set(0.5);
-title.x = W / 2;
-title.y = H / 2;
-mainContainer.addChild(title);
-
-const subStyle = new PIXI.TextStyle({
-  fontFamily: 'Montserrat',
-  fontSize: 11,
-  fontWeight: '300',
-  fill: 'rgba(255,255,255,0.35)',
-  letterSpacing: 7,
-});
-const sub = new PIXI.Text('CREATIVE STUDIO', subStyle);
-sub.anchor.set(0.5);
-sub.x = W / 2;
-sub.y = H / 2 + fontSize * 0.58;
-mainContainer.addChild(sub);
-
-// Small dot separator above text
-const dot = new PIXI.Graphics();
-dot.beginFill(0xffffff, 0.25);
-dot.drawCircle(0, 0, 2);
-dot.endFill();
-dot.x = W / 2;
-dot.y = H / 2 - fontSize * 0.58;
-mainContainer.addChild(dot);
-
-// ─── DISPLACEMENT ─────────────────────────────────────────────────────────────
-let displacementSprite, displacementFilter;
-
-function buildDisplacement(blurPasses) {
-  if (displacementSprite) {
-    mainContainer.removeChild(displacementSprite);
-    displacementSprite.destroy();
-  }
-
-  const noiseCanvas = buildNoiseCanvas(512, blurPasses);
-  const tex = PIXI.Texture.from(noiseCanvas);
-  tex.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
-
-  displacementSprite = new PIXI.Sprite(tex);
-  displacementSprite.width = W * 1.2;
-  displacementSprite.height = H * 1.2;
-  mainContainer.addChild(displacementSprite);
-
-  displacementFilter = new PIXI.filters.DisplacementFilter(displacementSprite);
-  displacementFilter.scale.set(MODES[currentMode].scaleIdle);
-  mainContainer.filters = [displacementFilter];
-}
-
-buildDisplacement(MODES[0].blurPasses);
-
-// ─── ANIMATION LOOP ───────────────────────────────────────────────────────────
-let tick = 0;
-app.ticker.add((delta) => {
-  const speed = MODES[currentMode].speed;
-  tick += delta;
-  displacementSprite.x += speed * delta * 0.8;
-  displacementSprite.y += speed * delta * 0.5;
-  if (displacementSprite.x > displacementSprite.width)  displacementSprite.x = 0;
-  if (displacementSprite.y > displacementSprite.height) displacementSprite.y = 0;
-});
-
-// ─── MOUSE / TOUCH ────────────────────────────────────────────────────────────
-let idleTimer;
-const mode = MODES[currentMode];
-
-function onMove(ex, ey) {
-  if (!displacementFilter) return;
-  const m = MODES[currentMode];
-  gsap.to(displacementFilter.scale, {
-    x: m.scaleHover,
-    y: m.scaleHover,
-    duration: 0.4,
-    ease: 'power2.out',
-    overwrite: true,
-  });
-
-  clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => {
-    gsap.to(displacementFilter.scale, {
-      x: m.scaleIdle,
-      y: m.scaleIdle,
-      duration: 2.5,
-      ease: 'power3.out',
-    });
-  }, 1200);
-}
-
-window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
-window.addEventListener('touchmove', e => {
-  const t = e.touches[0];
-  onMove(t.clientX, t.clientY);
-}, { passive: true });
-
-// ─── INTRO ─────────────────────────────────────────────────────────────────────
-title.alpha = 0;
-sub.alpha = 0;
-dot.alpha = 0;
-
-gsap.fromTo(displacementFilter.scale,
-  { x: 260, y: 260 },
-  { x: MODES[0].scaleIdle, y: MODES[0].scaleIdle, duration: 3, ease: 'power4.out', delay: 0.2 }
-);
-gsap.to(title, { alpha: 1, duration: 1.8, delay: 0.3, ease: 'power2.out' });
-gsap.to(sub,   { alpha: 1, duration: 1.8, delay: 0.7, ease: 'power2.out' });
-gsap.to(dot,   { alpha: 1, duration: 1.8, delay: 0.5, ease: 'power2.out' });
-
-// Fade out hint after 4s
-setTimeout(() => {
-  const hint = document.getElementById('hint');
-  if (hint) hint.style.opacity = '0';
-}, 5000);
-
-// ─── MODE BUTTONS ─────────────────────────────────────────────────────────────
-document.querySelectorAll('.btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMode = parseInt(btn.dataset.mode);
-    const m = MODES[currentMode];
-
-    // Rebuild displacement texture with new blur setting
-    buildDisplacement(m.blurPasses);
-
-    // Transition scale
-    gsap.fromTo(displacementFilter.scale,
-      { x: 220, y: 220 },
-      { x: m.scaleIdle, y: m.scaleIdle, duration: 1.5, ease: 'power3.out' }
-    );
-  });
-});
-
-// ─── RESIZE ───────────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  // Simple reload to re-layout (clean approach for demo)
-  // In production, rebuild all geometry
-});
-</script>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
 </body>
 </html>
