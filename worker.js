@@ -1,8 +1,9 @@
+const DASHBOARD_URL = 'https://raw.githubusercontent.com/irene-sgd/gomma/main/dashboard.html';
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         headers: {
@@ -13,7 +14,14 @@ export default {
       });
     }
 
-    // Proxy Notion API calls only
+    if (url.pathname === '/' || url.pathname === '' || url.pathname === '/dashboard.html') {
+      const res = await fetch(DASHBOARD_URL);
+      const html = await res.text();
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }
+      });
+    }
+
     if (url.pathname.startsWith('/v1/')) {
       const notionUrl = 'https://api.notion.com' + url.pathname + url.search;
       const res = await fetch(notionUrl, {
@@ -35,6 +43,6 @@ export default {
       });
     }
 
-    return new Response('Notion proxy — use /v1/ endpoints', { status: 200 });
+    return new Response('Not found', { status: 404 });
   }
 }
