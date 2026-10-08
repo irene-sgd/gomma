@@ -1,5 +1,3 @@
-const DASHBOARD_URL = 'https://raw.githubusercontent.com/irene-sgd/gomma/main/dashboard.html';
-
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -11,14 +9,6 @@ export default {
           'Access-Control-Allow-Headers': 'Authorization, Content-Type, Notion-Version',
           'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE'
         }
-      });
-    }
-
-    if (url.pathname === '/' || url.pathname === '' || url.pathname === '/dashboard.html') {
-      const res = await fetch(DASHBOARD_URL);
-      const html = await res.text();
-      return new Response(html, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }
       });
     }
 
