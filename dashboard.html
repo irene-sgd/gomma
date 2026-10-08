@@ -114,18 +114,23 @@
   .qcol:last-child { border-right: none; }
   .ql { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
   .qi { font-size: 12px; color: var(--text2); line-height: 1.9; }
-  .token-form { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; text-align: center; }
-  .token-form h2 { font-size: 18px; font-weight: 600; }
-  .token-form p { font-size: 13px; color: var(--text2); max-width: 400px; }
-  .token-input { width: 100%; max-width: 400px; padding: 10px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-size: 13px; font-family: monospace; }
-  .token-input:focus { outline: none; border-color: #378ADD; }
-  .save-btn { padding: 8px 24px; border-radius: 999px; border: none; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 500; cursor: pointer; }
-  .save-btn:hover { opacity: .85; }
-  .token-note { font-size: 11px; color: var(--text3); max-width: 400px; }
-  .error-msg { background: #FCEBEB; color: #791F1F; border-radius: var(--radius); padding: 10px 14px; font-size: 12px; max-width: 500px; margin: 0 auto 1rem; }
-  .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 60vh; flex-direction: column; gap: 16px; }
-  .loading-screen p { font-size: 13px; color: var(--text2); }
-  .big-spinner { width: 32px; height: 32px; border: 2.5px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; }
+  body.auth { background: #000; color: #fff; font-family: SpotifyMixUI, CircularSp-Arab, CircularSp-Cyrl, "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  body.auth .page { max-width: none; min-height: 100vh; padding: 8px; display: flex; }
+  body.auth #root { flex: 1; display: flex; }
+  .token-form { margin: auto; width: 100%; max-width: 400px; background: #121212; border-radius: 8px; padding: 32px; display: flex; flex-direction: column; align-items: stretch; gap: 16px; text-align: center; }
+  .token-form h2 { font-size: 24px; line-height: 1.25; font-weight: 700; color: #fff; }
+  .token-input { width: 100%; height: 48px; padding: 12px 16px; border: 0; border-radius: 500px; background: #1f1f1f; color: #fff; font-family: inherit; font-size: 16px; line-height: 24px; font-weight: 400; outline: none; transition: background-color 100ms; }
+  .token-input:hover { background: #292929; }
+  .token-input:focus-visible { outline: 3px solid #fff; }
+  .save-btn { align-self: center; min-height: 48px; padding: 8px 32px; border: 0; border-radius: 9999px; background: #fff; color: #000; font-family: inherit; font-size: 16px; line-height: 1; font-weight: 700; cursor: pointer; white-space: nowrap; transition: transform 33ms; }
+  .save-btn:hover { transform: scale(1.04); }
+  .save-btn:active { transform: scale(1); opacity: .7; }
+  .save-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .error-msg { background: #1f1f1f; color: #fff; border-radius: 8px; padding: 12px 16px; font-size: 14px; }
+  .loading-screen { margin: auto; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .loading-screen p { font-size: 14px; color: #b3b3b3; }
+  .big-spinner { width: 32px; height: 32px; border: 3px solid #3b3b3b; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .save-btn, .token-input { transition: none; } .save-btn:hover { transform: none; } }
 </style>
 </head>
 <body>
@@ -632,13 +637,12 @@ function setStatus(msg) {
 }
 
 function renderTokenForm(errorMsg) {
+  document.body.classList.add('auth');
   var html = '<div class="token-form">';
-  html += '<h2>Connect to Notion</h2>';
-  html += '<p>Enter your Notion integration token to load live data from your workspace.</p>';
+  html += '<h2>Login</h2>';
   if (errorMsg) html += '<div class="error-msg">' + errorMsg + '</div>';
-  html += '<input class="token-input" id="token-input" type="password" placeholder="ntn_xxxxxxxxxxxx or secret_xxxxxxxxxxxx" />';
-  html += '<button class="save-btn" onclick="submitToken()">Connect</button>';
-  html += '<p class="token-note">Your token is stored locally in your browser and never sent anywhere except directly to Notion\'s API. Create an integration at notion.so/my-integrations and share your workspace pages with it.</p>';
+  html += '<input class="token-input" id="token-input" type="password" aria-label="Login" autocomplete="off" onkeydown="if(event.key===\'Enter\')submitToken()" />';
+  html += '<button class="save-btn" onclick="submitToken()">Login</button>';
   html += '</div>';
   document.getElementById('root').innerHTML = html;
 }
@@ -646,7 +650,7 @@ function renderTokenForm(errorMsg) {
 function submitToken() {
   var val = document.getElementById('token-input').value.trim();
   if (!val || (!val.startsWith('secret_') && !val.startsWith('ntn_'))) {
-    renderTokenForm('Token must start with secret_ or ntn_ — paste it carefully, no extra spaces');
+    renderTokenForm('Login failed. Please try again.');
     return;
   }
   saveToken(val);
@@ -654,6 +658,7 @@ function submitToken() {
 }
 
 function renderShell() {
+  document.body.classList.remove('auth');
   var html = '<div class="topbar">';
   html += '<div class="topbar-left">';
   html += '<div id="logo-placeholder" style="display:flex;align-items:center;gap:10px;"></div>';
@@ -674,13 +679,14 @@ async function init() {
   var token = getToken();
   if (!token) { renderTokenForm(); return; }
 
-  document.getElementById('root').innerHTML = '<div class="loading-screen"><div class="big-spinner"></div><p>Connecting to Notion...</p></div>';
+  document.body.classList.add('auth');
+  document.getElementById('root').innerHTML = '<div class="loading-screen"><div class="big-spinner"></div><p>Loading...</p></div>';
 
   try {
     await notionGet('users/me');
   } catch(e) {
     localStorage.removeItem(TOKEN_KEY);
-    renderTokenForm('Could not connect — token may be invalid or expired.');
+    renderTokenForm('Login failed. Please try again.');
     return;
   }
 
