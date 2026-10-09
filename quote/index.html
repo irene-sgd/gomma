@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get a quote — GØMMA Studio</title>
+<meta name="description" content="Tell GØMMA Studio who you are and we'll get in touch, or book a 15-minute meeting. A global design studio for culture, social causes, music, corporate and artist work.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg-base: #000000;
+    --bg-elevated: #121212;
+    --bg-highlight: #1f1f1f;
+    --bg-press: #292929;
+    --bg-tinted: #3b3b3b;
+    --text: #ffffff;
+    --text-subdued: #b3b3b3;
+    --border-essential: #7c7c7c;
+    --accent: #1ed760;
+    --on-accent: #000000;
+    --negative: #f3727f;
+    --font: SpotifyMixUI, CircularSp-Arab, CircularSp-Cyrl, "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg-base); scrollbar-color: var(--bg-tinted) var(--bg-base); }
+  body { margin: 0; padding: 8px; min-height: 100vh; background: var(--bg-base); color: var(--text); font: 400 16px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--text); color: var(--bg-base); }
+  a { color: inherit; }
+
+  .shell { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 8px; max-width: 1200px; margin: 0 auto; align-items: start; }
+  .panel { background: var(--bg-elevated); border-radius: 8px; padding: 40px; }
+
+  .intro { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 40px; }
+  .brand { display: inline-block; align-self: flex-start; line-height: 0; border-radius: 4px; }
+  .brand:focus-visible { outline: 3px solid var(--text); outline-offset: 6px; }
+  h1 { margin: 0 0 16px; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 0.98; letter-spacing: -0.03em; font-weight: 700; text-wrap: balance; }
+  .lede { margin: 0 0 24px; max-width: 34ch; color: var(--text-subdued); }
+  .next h2 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+  .next ol { margin: 0; padding-left: 20px; color: var(--text-subdued); display: grid; gap: 8px; max-width: 38ch; }
+  .next li::marker { color: var(--text); font-weight: 700; }
+
+  fieldset { border: 0; margin: 0 0 40px; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  legend { padding: 0; margin: 0 0 4px; font-size: 24px; line-height: 1.25; font-weight: 700; float: left; width: 100%; }
+  legend + * { clear: both; }
+  .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+  .field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .label { font-size: 14px; font-weight: 700; }
+  .error { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-size: 14px; font-weight: 700; color: var(--negative); }
+  .error svg { flex: none; width: 16px; height: 16px; margin-top: 2px; fill: currentColor; }
+  .error[hidden] { display: none; }
+
+  input[type="text"], input[type="email"] { width: 100%; height: 48px; padding: 12px 16px; border: 0; border-radius: 9999px; background-color: var(--bg-highlight); color: var(--text); font: 400 16px/24px var(--font); caret-color: var(--text); outline: none; transition: background-color 100ms; }
+  textarea { width: 100%; min-height: 140px; padding: 14px 16px; border: 0; border-radius: 8px; background-color: var(--bg-highlight); color: var(--text); font: 400 16px/24px var(--font); caret-color: var(--text); outline: none; resize: vertical; transition: background-color 100ms; }
+  textarea::placeholder { color: var(--text-subdued); opacity: 1; }
+  textarea:hover { background-color: var(--bg-press); }
+  textarea:focus-visible { outline: 3px solid var(--text); }
+  input[type="text"]:hover, input[type="email"]:hover { background-color: var(--bg-press); }
+  input[type="text"]:focus-visible, input[type="email"]:focus-visible { outline: 3px solid var(--text); }
+  [aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--negative); }
+  input:-webkit-autofill { -webkit-text-fill-color: var(--text); box-shadow: inset 0 0 0 1000px var(--bg-highlight); }
+
+  .alert { margin: 0 0 24px; padding: 14px 16px; border-radius: 8px; background: var(--bg-highlight); font-size: 14px; font-weight: 700; display: flex; gap: 10px; }
+  .alert svg { flex: none; width: 16px; height: 16px; margin-top: 3px; fill: var(--negative); }
+  .alert[hidden] { display: none; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 8px 32px; border: 0; border-radius: 9999px; background: var(--text); color: var(--bg-base); font: 700 16px/1 var(--font); text-decoration: none; cursor: pointer; transition: transform 33ms; }
+  .btn:hover { transform: scale(1.04); }
+  .btn:active { transform: scale(1); opacity: 0.7; }
+  .btn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+  .btn-outline { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--border-essential); }
+  .btn-outline:hover { box-shadow: inset 0 0 0 1px var(--text); }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .btn[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
+  .btn[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; border: 2px solid rgba(0, 0, 0, 0.25); border-top-color: var(--bg-base); border-radius: 50%; animation: spin 700ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .nojs { margin: 0 0 24px; color: var(--text-subdued); }
+
+  .done { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; padding: 24px 0; }
+  .done[hidden] { display: none; }
+  .done:focus { outline: none; }
+  .done h2 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: 1; letter-spacing: -0.03em; font-weight: 700; text-wrap: balance; }
+  .done p { margin: 0; max-width: 46ch; color: var(--text-subdued); }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .check { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
+  .check svg { width: 28px; height: 28px; fill: currentColor; }
+  .reveal { animation: rise 500ms var(--ease-out) both; }
+  .reveal .check { animation: pop 600ms var(--ease-out) 120ms both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.6); } }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: minmax(0, 1fr); }
+    .intro { position: static; gap: 32px; }
+    .panel { padding: 24px 16px; }
+    .row { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .btn:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="panel intro">
+    <a class="brand" href="/" aria-label="GØMMA Studio home"><svg width="106" height="16" viewBox="0 0 106 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.5688 9.00771C16.5548 9.96744 16.3661 10.8723 16.0025 11.7224C15.639 12.5587 15.1217 13.2991 14.4505 13.9434C13.7794 14.5878 12.9614 15.0951 11.9967 15.4653C11.0459 15.8218 9.95528 16 8.72485 16C7.48044 16 6.32691 15.8149 5.26427 15.4447C4.20163 15.0746 3.27182 14.5467 2.47484 13.8612C1.69184 13.162 1.08362 12.3188 0.650169 11.3316C0.216723 10.3445 0 9.23393 0 8C0 6.76607 0.216723 5.65553 0.650169 4.66838C1.0976 3.68123 1.7198 2.8449 2.51678 2.15938C3.31377 1.46015 4.25057 0.92545 5.32719 0.55527C6.40382 0.18509 7.58531 0 8.87166 0C10.4796 0 11.8848 0.260497 13.0873 0.781492C14.3037 1.28878 15.2825 1.988 16.0235 2.87918C16.7646 3.77035 17.219 4.79177 17.3868 5.94345H14.5764C14.4226 5.2168 14.087 4.58612 13.5697 4.05141C13.0663 3.51671 12.4161 3.1054 11.6192 2.81748C10.8222 2.52956 9.89935 2.38561 8.85069 2.38561C7.62026 2.38561 6.55063 2.61183 5.64179 3.06427C4.74693 3.503 4.04783 4.14053 3.54447 4.97686C3.0551 5.8132 2.81041 6.82091 2.81041 8C2.81041 9.17909 3.06209 10.1937 3.56544 11.0437C4.08278 11.8937 4.80985 12.545 5.74666 12.9974C6.68346 13.4499 7.78805 13.6761 9.06042 13.6761C10.2908 13.6761 11.3675 13.4704 12.2903 13.0591C13.2131 12.6478 13.9402 12.0788 14.4715 11.3522C15.0028 10.6118 15.2895 9.75493 15.3314 8.78149L16.5688 9.00771ZM9.60572 10.1799V8.12339H17.5546V15.7121H15.4992L15.1636 9.3162L15.8138 10.1799H9.60572Z" fill="white"/>
+      <path d="M34.4231 0H37.2125L22.8249 16H20.0355L34.4231 0ZM28.6135 16C26.8238 16 25.2508 15.6641 23.8945 14.9923C22.5522 14.3205 21.5036 13.3882 20.7486 12.1954C19.9935 10.9889 19.616 9.5904 19.616 8C19.616 6.4096 19.9935 5.018 20.7486 3.82519C21.5036 2.61868 22.5522 1.67952 23.8945 1.00771C25.2508 0.335904 26.8238 0 28.6135 0C29.8999 0 31.0883 0.191945 32.1789 0.575835C33.2835 0.959727 34.2413 1.50814 35.0523 2.22108C35.8632 2.92031 36.4924 3.7635 36.9399 4.75064C37.4013 5.72408 37.632 6.8072 37.632 8C37.632 9.5904 37.2545 10.9889 36.4994 12.1954C35.7444 13.3882 34.6887 14.3205 33.3325 14.9923C31.9762 15.6641 30.4032 16 28.6135 16ZM28.6135 13.5733C29.8859 13.5733 30.9835 13.347 31.9063 12.8946C32.8291 12.4422 33.5422 11.7978 34.0456 10.9614C34.5629 10.1251 34.8216 9.13796 34.8216 8C34.8216 6.86204 34.5629 5.87489 34.0456 5.03856C33.5422 4.20223 32.8291 3.55784 31.9063 3.1054C30.9835 2.65296 29.8859 2.42674 28.6135 2.42674C27.3551 2.42674 26.2575 2.65296 25.3207 3.1054C24.3979 3.55784 23.6848 4.20223 23.1814 5.03856C22.6781 5.87489 22.4264 6.86204 22.4264 8C22.4264 9.13796 22.6781 10.1251 23.1814 10.9614C23.6848 11.7978 24.3979 12.4422 25.3207 12.8946C26.2575 13.347 27.3551 13.5733 28.6135 13.5733Z" fill="white"/>
+      <path d="M61.2743 0.287918V15.7121H58.6317V1.11054L59.4916 1.15167L52.172 15.7121H49.2147L41.8951 1.17224L42.755 1.13111V15.7121H40.1124V0.287918H44.349L51.396 14.5398H50.0117L57.0377 0.287918H61.2743Z" fill="white"/>
+      <path d="M85.745 0.287918V15.7121H83.1023V1.11054L83.9622 1.15167L76.6426 15.7121H73.6854L66.3657 1.17224L67.2256 1.13111V15.7121H64.583V0.287918H68.8196L75.8666 14.5398H74.4824L81.5084 0.287918H85.745Z" fill="white"/>
+      <path d="M91.151 12.1748V9.93316H102.141V12.1748H91.151ZM98.4497 0.287918L106 15.7121H103.043L96.1845 1.3162H97.2542L90.396 15.7121H87.4387L94.9891 0.287918H98.4497Z" fill="white"/>
+    </svg></a>
+    <div>
+      <h1>Get a quote</h1>
+      <p class="lede">Leave your details and we'll get in touch. Prefer to talk first? Pick a time that suits you.</p>
+      <a class="btn btn-outline" id="book-intro" href="https://calendly.com/irene-sgd/15-minute-meeting" target="_blank" rel="noopener">Book a 15-minute meeting</a>
+    </div>
+    <div class="next">
+      <h2>What happens next</h2>
+      <ol>
+        <li>You send your details.</li>
+        <li>We get in touch by email.</li>
+        <li>We talk through your project together.</li>
+      </ol>
+    </div>
+  </aside>
+
+  <main class="panel" id="main">
+    <noscript><p class="nojs">This form needs JavaScript to send. Please turn it on and reload the page, or book a meeting from the link on the left.</p></noscript>
+
+    <form id="quote-form" novalidate>
+      <div id="form-alert" class="alert" role="alert" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.5h1.5v4.5h-1.5V4.5zM8 12.75a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8z"/></svg>
+        <span id="form-alert-text"></span>
+      </div>
+
+      <fieldset>
+        <legend>About you</legend>
+        <div class="row">
+          <div class="field">
+            <label class="label" for="contactName">Your name</label>
+            <input id="contactName" name="contactName" type="text" autocomplete="name" maxlength="100" required aria-describedby="contactName-error">
+            <p class="error" id="contactName-error" hidden></p>
+          </div>
+          <div class="field">
+            <label class="label" for="companyName">Company</label>
+            <input id="companyName" name="companyName" type="text" autocomplete="organization" maxlength="120" required aria-describedby="companyName-error">
+            <p class="error" id="companyName-error" hidden></p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="contactEmail">Email</label>
+          <input id="contactEmail" name="contactEmail" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" required aria-describedby="contactEmail-error">
+          <p class="error" id="contactEmail-error" hidden></p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Your project</legend>
+        <div class="field">
+          <label class="label" for="project">Tell us about your project</label>
+          <textarea id="project" name="project" rows="6" maxlength="1000" placeholder="What would you like to make, and who is it for?" required aria-describedby="project-error"></textarea>
+          <p class="error" id="project-error" hidden></p>
+        </div>
+      </fieldset>
+
+      <div class="hp" aria-hidden="true">
+        <label>Leave this field empty <input type="text" name="nickname" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <button class="btn" type="submit" id="submit">Send</button>
+    </form>
+
+    <section class="done" id="done" tabindex="-1" hidden aria-labelledby="done-title">
+      <div class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 8.5-8.5 1.4 1.4z"/></svg></div>
+      <h2 id="done-title">Thank you</h2>
+      <p>We have your details and will be in touch by email. Want to talk sooner? Pick a time that suits you.</p>
+      <div class="actions">
+        <a class="btn" id="book-done" href="https://calendly.com/irene-sgd/15-minute-meeting" target="_blank" rel="noopener">Book a 15-minute meeting</a>
+        <a class="btn btn-outline" href="/">Back to GØMMA</a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://dashboard.gomma.cc/api/intake';
+  var CALENDLY = 'https://calendly.com/irene-sgd/15-minute-meeting';
+  var form = document.getElementById('quote-form');
+  var submit = document.getElementById('submit');
+  var alertBox = document.getElementById('form-alert');
+  var alertText = document.getElementById('form-alert-text');
+  var ERROR_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.5h1.5v4.5h-1.5V4.5zM8 12.75a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8z"/></svg>';
+
+  var FIELDS = ['contactName', 'companyName', 'contactEmail', 'project'];
+  var MESSAGES = {
+    contactName: 'Enter your name.',
+    companyName: 'Enter your company name.',
+    contactEmail: 'Enter an email we can reply to, like name@company.com.',
+    project: 'Tell us a little about your project. A sentence or two is enough.'
+  };
+
+  function value(name) { return form.elements[name].value.trim(); }
+
+  function problem(name, v) {
+    if (name === 'contactName') return v.length >= 2 && v.length <= 100 ? '' : MESSAGES[name];
+    if (name === 'companyName') return v.length >= 2 && v.length <= 120 ? '' : MESSAGES[name];
+    if (name === 'project') return v.length >= 10 && v.length <= 1000 ? '' : MESSAGES[name];
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : MESSAGES[name];
+  }
+
+  function setError(name, message) {
+    var box = document.getElementById(name + '-error');
+    var input = form.elements[name];
+    if (message) {
+      box.innerHTML = ERROR_ICON + '<span></span>';
+      box.lastChild.textContent = message;
+      box.hidden = false;
+      input.setAttribute('aria-invalid', 'true');
+    } else {
+      box.hidden = true;
+      input.removeAttribute('aria-invalid');
+    }
+  }
+
+  function showAlert(message) {
+    alertText.textContent = message;
+    alertBox.hidden = false;
+  }
+
+  FIELDS.forEach(function (name) {
+    var input = form.elements[name];
+    input.addEventListener('blur', function () { setError(name, problem(name, value(name))); });
+    input.addEventListener('input', function () {
+      if (input.getAttribute('aria-invalid') === 'true' && !problem(name, value(name))) setError(name, '');
+    });
+  });
+
+  function finish(name, email) {
+    form.hidden = true;
+    var done = document.getElementById('done');
+    document.getElementById('book-done').href = CALENDLY + '?name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email);
+    done.hidden = false;
+    done.classList.add('reveal');
+    done.focus({ preventScroll: true });
+    done.scrollIntoView({ block: 'start' });
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (submit.getAttribute('aria-busy') === 'true') return;
+    alertBox.hidden = true;
+
+    var firstInvalid = null;
+    var count = 0;
+    FIELDS.forEach(function (name) {
+      var message = problem(name, value(name));
+      setError(name, message);
+      if (message) { count++; firstInvalid = firstInvalid || name; }
+    });
+    if (firstInvalid) {
+      showAlert(count === 1 ? 'One field needs your attention.' : count + ' fields need your attention.');
+      form.elements[firstInvalid].focus();
+      return;
+    }
+
+    var body = {
+      contactName: value('contactName'),
+      companyName: value('companyName'),
+      contactEmail: value('contactEmail'),
+      project: value('project'),
+      nickname: form.elements.nickname.value
+    };
+
+    submit.setAttribute('aria-busy', 'true');
+    submit.textContent = 'Sending';
+    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (res) {
+        if (res.status === 202) return finish(body.contactName, body.contactEmail);
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (res.status === 400 && data.fields) {
+            var first = null;
+            Object.keys(data.fields).forEach(function (name) {
+              if (MESSAGES[name]) { setError(name, MESSAGES[name]); first = first || name; }
+            });
+            if (first) { showAlert('Please check the highlighted fields.'); return form.elements[first].focus(); }
+          }
+          showAlert(res.status === 429
+            ? 'You have sent a few requests in a short time. Please wait a minute and try again.'
+            : 'We could not send your details. Please try again in a moment.');
+        });
+      })
+      .catch(function () { showAlert('We could not reach the server. Check your connection and try again.'); })
+      .then(function () {
+        if (form.hidden) return;
+        submit.removeAttribute('aria-busy');
+        submit.textContent = 'Send';
+        if (!alertBox.hidden) alertBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+  });
+})();
+</script>
+</body>
+</html>
