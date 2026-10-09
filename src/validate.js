@@ -1,3 +1,5 @@
+import { BUDGETS, INCLUDES, TIMELINES } from './options.js';
+
 const clean = (value) =>
   typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -28,7 +30,23 @@ export function validateLead(body) {
 
   const project = cleanMultiline(input.project);
   if (project.length < 10 || project.length > 1000) errors.project = 'Enter 10-1000 characters.';
-  else lead.project = project;
+
+  // Optional details from the quote form travel with the project text.
+  const extras = [];
+  const timeline = clean(input.timeline);
+  if (timeline) {
+    if (Object.hasOwn(TIMELINES, timeline)) extras.push(`Timeline: ${timeline}`);
+    else errors.timeline = 'Choose a timeline.';
+  }
+  const included = Array.isArray(input.included) ? input.included : [];
+  if (!included.every((name) => typeof name === 'string' && Object.hasOwn(INCLUDES, name))) errors.included = 'Unknown deliverable.';
+  else if (included.length) extras.push(`Includes: ${included.join(', ')}`);
+  const budget = clean(input.budget);
+  if (budget) {
+    if (Object.hasOwn(BUDGETS, budget)) extras.push(`Budget: ${budget}`);
+    else errors.budget = 'Unknown budget.';
+  }
+  if (!errors.project) lead.project = [project, ...(extras.length ? ['', ...extras] : [])].join('\n');
 
   return Object.keys(errors).length ? { errors } : { lead };
 }

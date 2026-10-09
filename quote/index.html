@@ -60,6 +60,33 @@
   [aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--negative); }
   input:-webkit-autofill { -webkit-text-fill-color: var(--text); box-shadow: inset 0 0 0 1000px var(--bg-highlight); }
 
+  select { width: 100%; height: 48px; padding: 12px 44px 12px 16px; border: 0; border-radius: 9999px; background-color: var(--bg-highlight); color: var(--text); font: 400 16px/24px var(--font); outline: none; appearance: none; cursor: pointer; transition: background-color 100ms; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b3b3b3'%3E%3Cpath d='M3.2 5.7a.75.75 0 0 1 1.06 0L8 9.44l3.74-3.74a.75.75 0 1 1 1.06 1.06L8.53 11.03a.75.75 0 0 1-1.06 0L3.2 6.76a.75.75 0 0 1 0-1.06z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; }
+  select:hover { background-color: var(--bg-press); }
+  select:focus-visible { outline: 3px solid var(--text); }
+  select:invalid { color: var(--text-subdued); }
+  option { background: var(--bg-highlight); color: var(--text); }
+  .opt { font-weight: 400; color: var(--text-subdued); }
+  .hint { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-subdued); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+  .chip { position: relative; }
+  .chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .chip span { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 20px; border-radius: 9999px; background: var(--bg-highlight); font-size: 14px; font-weight: 700; color: var(--text-subdued); transition: background-color 100ms, color 100ms; }
+  .chip:hover span { background: var(--bg-press); color: var(--text); }
+  .chip input:checked + span { background: var(--text); color: var(--bg-base); }
+  .chip input:checked + span::before { content: ""; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--check) center / contain no-repeat; mask: var(--check) center / contain no-repeat; }
+  .chip input:focus-visible + span { outline: 3px solid var(--text); outline-offset: 2px; }
+  :root { --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 8.5-8.5 1.4 1.4z'/%3E%3C/svg%3E"); }
+
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+  .estimate { margin-top: 32px; padding: 24px; border-radius: 8px; background: var(--bg-highlight); display: flex; flex-direction: column; gap: 16px; }
+  .estimate[hidden] { display: none; }
+  .estimate h2 { margin: 0; font-size: 16px; font-weight: 700; }
+  .estimate .range { margin: 0; font-size: clamp(2rem, 5vw, 3rem); line-height: 1; letter-spacing: -0.03em; font-weight: 700; }
+  .estimate .range small { font-size: 16px; font-weight: 700; letter-spacing: 0; color: var(--text-subdued); }
+  .estimate ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text-subdued); max-width: 60ch; }
+  .estimate .fine { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-subdued); max-width: 60ch; }
+
   .alert { margin: 0 0 24px; padding: 14px 16px; border-radius: 8px; background: var(--bg-highlight); font-size: 14px; font-weight: 700; display: flex; gap: 10px; }
   .alert svg { flex: none; width: 16px; height: 16px; margin-top: 3px; fill: var(--negative); }
   .alert[hidden] { display: none; }
@@ -73,6 +100,7 @@
   .btn svg { width: 16px; height: 16px; fill: currentColor; }
   .btn[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
   .btn[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; border: 2px solid rgba(0, 0, 0, 0.25); border-top-color: var(--bg-base); border-radius: 50%; animation: spin 700ms linear infinite; }
+  .btn-outline[aria-busy="true"]::before { border-color: rgba(255, 255, 255, 0.25); border-top-color: var(--text); }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
@@ -165,13 +193,58 @@
           <textarea id="project" name="project" rows="6" maxlength="1000" placeholder="What would you like to make, and who is it for?" required aria-describedby="project-error"></textarea>
           <p class="error" id="project-error" hidden></p>
         </div>
+        <div class="field">
+          <span class="label" id="included-label">What's included <span class="opt">(optional)</span></span>
+          <div class="chips" id="included" role="group" aria-labelledby="included-label">
+            <label class="chip"><input type="checkbox" name="included" value="Brand identity"><span>Brand identity</span></label>
+            <label class="chip"><input type="checkbox" name="included" value="Website"><span>Website</span></label>
+            <label class="chip"><input type="checkbox" name="included" value="Packaging"><span>Packaging</span></label>
+            <label class="chip"><input type="checkbox" name="included" value="Motion or video"><span>Motion or video</span></label>
+            <label class="chip"><input type="checkbox" name="included" value="Signage and print"><span>Signage and print</span></label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="label" for="timeline">Timeline</label>
+            <select id="timeline" name="timeline" required aria-describedby="timeline-hint timeline-error">
+              <option value="" selected disabled>When do you need it?</option>
+              <option>Same day</option>
+              <option>Under 5 working days</option>
+              <option>1 to 2 weeks</option>
+              <option>2 to 4 weeks</option>
+              <option>1 to 3 months</option>
+              <option>More than 3 months</option>
+              <option>Flexible</option>
+            </select>
+            <p class="hint" id="timeline-hint">Needed for a quick quote.</p>
+            <p class="error" id="timeline-error" hidden></p>
+          </div>
+          <div class="field">
+            <label class="label" for="budget">Your budget <span class="opt">(optional)</span></label>
+            <select id="budget" name="budget">
+              <option value="" selected>Choose a range</option>
+              <option>Under $1,000</option>
+              <option>$1,000 to $3,000</option>
+              <option>$3,000 to $7,500</option>
+              <option>$7,500 to $15,000</option>
+              <option>$15,000 or more</option>
+              <option>Not sure yet</option>
+            </select>
+            <p class="hint">In US dollars.</p>
+          </div>
+        </div>
       </fieldset>
 
       <div class="hp" aria-hidden="true">
         <label>Leave this field empty <input type="text" name="nickname" tabindex="-1" autocomplete="off"></label>
       </div>
 
-      <button class="btn" type="submit" id="submit">Send</button>
+      <div class="buttons">
+        <button class="btn" type="submit" id="submit">Send</button>
+        <button class="btn btn-outline" type="button" id="quick">Get quote quick</button>
+      </div>
+
+      <section class="estimate" id="estimate" aria-live="polite" hidden></section>
     </form>
 
     <section class="done" id="done" tabindex="-1" hidden aria-labelledby="done-title">
@@ -188,12 +261,14 @@
 
 <script>
 (function () {
-  var ENDPOINT = 'https://dashboard.gomma.cc/api/intake';
+  var API = 'https://dashboard.gomma.cc/api/';
   var CALENDLY = 'https://calendly.com/irene-sgd/15-minute-meeting';
   var form = document.getElementById('quote-form');
   var submit = document.getElementById('submit');
+  var quick = document.getElementById('quick');
   var alertBox = document.getElementById('form-alert');
   var alertText = document.getElementById('form-alert-text');
+  var estimateBox = document.getElementById('estimate');
   var ERROR_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.5h1.5v4.5h-1.5V4.5zM8 12.75a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8z"/></svg>';
 
   var FIELDS = ['contactName', 'companyName', 'contactEmail', 'project'];
@@ -201,15 +276,20 @@
     contactName: 'Enter your name.',
     companyName: 'Enter your company name.',
     contactEmail: 'Enter an email we can reply to, like name@company.com.',
-    project: 'Tell us a little about your project. A sentence or two is enough.'
+    project: 'Tell us a little about your project. A sentence or two is enough.',
+    timeline: 'Choose when you need it.'
   };
 
+  function checked() {
+    return Array.prototype.map.call(form.querySelectorAll('input[name="included"]:checked'), function (c) { return c.value; });
+  }
   function value(name) { return form.elements[name].value.trim(); }
 
   function problem(name, v) {
     if (name === 'contactName') return v.length >= 2 && v.length <= 100 ? '' : MESSAGES[name];
     if (name === 'companyName') return v.length >= 2 && v.length <= 120 ? '' : MESSAGES[name];
     if (name === 'project') return v.length >= 10 && v.length <= 1000 ? '' : MESSAGES[name];
+    if (name === 'timeline') return v ? '' : MESSAGES[name];
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : MESSAGES[name];
   }
 
@@ -232,13 +312,17 @@
     alertBox.hidden = false;
   }
 
-  FIELDS.forEach(function (name) {
+  FIELDS.concat('timeline').forEach(function (name) {
     var input = form.elements[name];
-    input.addEventListener('blur', function () { setError(name, problem(name, value(name))); });
+    input.addEventListener(name === 'timeline' ? 'change' : 'blur', function () { setError(name, problem(name, value(name))); });
     input.addEventListener('input', function () {
       if (input.getAttribute('aria-invalid') === 'true' && !problem(name, value(name))) setError(name, '');
     });
   });
+
+  function post(path, body) {
+    return fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  }
 
   function finish(name, email) {
     form.hidden = true;
@@ -250,6 +334,7 @@
     done.scrollIntoView({ block: 'start' });
   }
 
+  // ---- Send ----
   form.addEventListener('submit', function (event) {
     event.preventDefault();
     if (submit.getAttribute('aria-busy') === 'true') return;
@@ -275,17 +360,20 @@
       project: value('project'),
       nickname: form.elements.nickname.value
     };
+    if (value('timeline')) body.timeline = value('timeline');
+    if (checked().length) body.included = checked();
+    if (value('budget')) body.budget = value('budget');
 
     submit.setAttribute('aria-busy', 'true');
     submit.textContent = 'Sending';
-    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    post('intake', body)
       .then(function (res) {
         if (res.status === 202) return finish(body.contactName, body.contactEmail);
         return res.json().catch(function () { return {}; }).then(function (data) {
           if (res.status === 400 && data.fields) {
             var first = null;
             Object.keys(data.fields).forEach(function (name) {
-              if (MESSAGES[name]) { setError(name, MESSAGES[name]); first = first || name; }
+              if (MESSAGES[name] && form.elements[name]) { setError(name, MESSAGES[name]); first = first || name; }
             });
             if (first) { showAlert('Please check the highlighted fields.'); return form.elements[first].focus(); }
           }
@@ -299,6 +387,89 @@
         if (form.hidden) return;
         submit.removeAttribute('aria-busy');
         submit.textContent = 'Send';
+        if (!alertBox.hidden) alertBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+  });
+
+  // ---- Get quote quick ----
+  function el(tag, text, className) {
+    var node = document.createElement(tag);
+    if (text) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+  function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+  function renderEstimate(e) {
+    estimateBox.textContent = '';
+    estimateBox.appendChild(el('h2', 'Indicative estimate'));
+
+    var range = el('p', e.priceLow === e.priceHigh ? money(e.priceLow) : money(e.priceLow) + ' to ' + money(e.priceHigh), 'range');
+    range.appendChild(el('small', ' ' + e.currency));
+    estimateBox.appendChild(range);
+
+    var list = el('ul');
+    list.appendChild(el('li', 'About ' + e.hoursLow + ' to ' + e.hoursHigh + ' hours of studio time at ' + money(e.projectRate) + ' an hour.'));
+    if (e.surchargePercent) list.appendChild(el('li', 'Includes a ' + e.surchargePercent + '% ' + (e.surchargePercent >= 50 ? 'same-day' : 'rush') + ' surcharge for your timeline.'));
+    if (e.timelineFit === 'tight') list.appendChild(el('li', 'This looks like more work than we can fit into that timeline, as we work about ' + e.capacityHoursPerDay + ' focused hours a day. A longer timeline would help.'));
+    if (e.budgetFit === 'within') list.appendChild(el('li', 'Your budget range fits this estimate.'));
+    if (e.budgetFit === 'below') list.appendChild(el('li', 'Your budget is below this estimate. We can talk about trimming the scope.'));
+    if (e.budgetFit === 'above') list.appendChild(el('li', 'Your budget is comfortably above this estimate.'));
+    list.appendChild(el('li', e.revisionRounds + ' revision rounds are included for each deliverable.'));
+    estimateBox.appendChild(list);
+
+    estimateBox.appendChild(el('p', 'This is a guide, not a quote. A formal quote is valid for ' + e.validityDays + ' days, and projects start with a ' + e.depositPercent + '% deposit.', 'fine'));
+
+    var actions = el('div', '', 'buttons');
+    var book = el('a', 'Book a 15-minute meeting', 'btn');
+    book.href = CALENDLY;
+    book.target = '_blank';
+    book.rel = 'noopener';
+    var send = el('button', 'Send my details', 'btn btn-outline');
+    send.type = 'button';
+    send.addEventListener('click', function () {
+      form.elements.contactName.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      form.elements.contactName.focus({ preventScroll: true });
+    });
+    actions.appendChild(book);
+    actions.appendChild(send);
+    estimateBox.appendChild(actions);
+
+    estimateBox.hidden = false;
+    estimateBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  quick.addEventListener('click', function () {
+    if (quick.getAttribute('aria-busy') === 'true') return;
+    alertBox.hidden = true;
+    estimateBox.hidden = true;
+
+    var invalid = ['project', 'timeline'].filter(function (name) {
+      var message = problem(name, value(name));
+      setError(name, message);
+      return message;
+    });
+    if (invalid.length) {
+      showAlert('Add a short description and a timeline to get a quick quote.');
+      form.elements[invalid[0]].focus();
+      return;
+    }
+
+    quick.setAttribute('aria-busy', 'true');
+    quick.textContent = 'Working it out';
+    post('estimate', { project: value('project'), timeline: value('timeline'), included: checked(), budget: value('budget') })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (res.ok && data.estimate) return renderEstimate(data.estimate);
+          showAlert(res.status === 429
+            ? 'You have asked for a few quotes in a short time. Please wait a minute and try again.'
+            : 'We could not work out a quote right now. You can still send your details and we will get back to you.');
+        });
+      })
+      .catch(function () { showAlert('We could not reach the server. Check your connection and try again.'); })
+      .then(function () {
+        quick.removeAttribute('aria-busy');
+        quick.textContent = 'Get quote quick';
         if (!alertBox.hidden) alertBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
   });

@@ -14,11 +14,20 @@ namespace_id = "1001"
   limit = 5
   period = 60
 
+[[ratelimits]]
+name = "ESTIMATE_LIMITER"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 3
+  period = 60
+
 # Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY
 [vars]
 ALLOWED_ORIGIN = "https://gomma.cc"
 INTAKE_ENABLED = "true"
 AUTO_SCREEN = "false"
+ESTIMATE_ENABLED = "true"
+ESTIMATE_MODEL = "claude-haiku-5-5"
 AGENT_ID = "agent_01QfxayFLEQDwMpqcirJC1xA"
 AGENT_VERSION = "1"
 ENVIRONMENT_ID = "env_01Q1SdyBDmHFEZJ9SqaTS9Y5"
