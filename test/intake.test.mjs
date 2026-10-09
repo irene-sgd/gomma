@@ -45,15 +45,15 @@ test('rate limit returns 429 with Retry-After', async () => {
 
 test('validation errors return 400 with per-field messages and create nothing', async () => {
   const calls = mockFetch(routes());
-  const res = await handleIntake(intakeRequest({ ...goodLead(), website: 'http://localhost' }), env(), ctx());
+  const res = await handleIntake(intakeRequest({ ...goodLead(), contactEmail: 'not-an-email' }), env(), ctx());
   assert.equal(res.status, 400);
-  assert.ok((await res.json()).fields.website);
+  assert.ok((await res.json()).fields.contactEmail);
   assert.equal(calls.length, 0);
 });
 
 test('oversized and non-JSON bodies are refused', async () => {
   mockFetch(routes());
-  const big = await handleIntake(intakeRequest({ ...goodLead(), founders: 'x'.repeat(30000) }), env(), ctx());
+  const big = await handleIntake(intakeRequest({ ...goodLead(), notes: 'x'.repeat(30000) }), env(), ctx());
   assert.equal(big.status, 413);
   const bad = new Request('https://dashboard.gomma.cc/api/intake', { method: 'POST', headers: { Origin: 'https://gomma.cc' }, body: '{nope' });
   assert.equal((await handleIntake(bad, env(), ctx())).status, 400);
@@ -86,9 +86,11 @@ test('a valid lead creates one linked CRM row and does not start the agent by de
   assert.equal(properties['Screening Result'].select.name, 'Not screened');
   assert.equal(properties['Master Project Dashboard'].relation[0].id, env().PROJECT_PAGE_ID);
   assert.equal(properties['Area Category'].relation[0].id, env().AREA_PAGE_ID);
-  assert.equal(properties['Project Type'].select.name, 'Culture and social causes');
-  assert.equal(properties.Founded.date.start, '2019-04-02');
   assert.equal(properties.Email.email, 'mali@aurora-collective.org');
+  assert.equal(properties['Contact Name'].rich_text[0].text.content, 'Mali Chai');
+  assert.equal(properties.Name.title[0].text.content, 'Aurora Collective');
+  assert.match(properties.Topic.rich_text[0].text.content, /touring exhibition/);
+  assert.ok(children.some((b) => b.type === 'bulleted_list_item' && b.bulleted_list_item.rich_text[0].text.content.startsWith('Project:')));
   assert.equal(children[0].type, 'heading_2');
   assert.ok(!calls.some((c) => c.url.includes('anthropic.com')));
 });

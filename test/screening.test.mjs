@@ -43,7 +43,7 @@ const finished = (text) => [
 const pageUpdate = (calls) => calls.filter((c) => c.method === 'PATCH' && /\/v1\/pages\//.test(c.url)).pop().body.properties;
 
 test('sync: Pass confirms the lead and writes the summary under a Screening heading', async () => {
-  const calls = mockFetch(syncRoutes({ events: finished(resultBlock(eight(), { registration_no: 'REG-9', founded: '2019-04-02' })) }));
+  const calls = mockFetch(syncRoutes({ events: finished(resultBlock(eight(), { registration_no: 'REG-9', founded: '2019-04-02', website: 'https://aurora-collective.org/', founders: 'Mali Chai, Ken Aoki' })) }));
   const res = await handleScreeningApi(syncRequest(), env(), 'sync');
   assert.deepEqual(await res.json(), { ok: true, checked: 1, running: 0, finished: 1, failed: 0, errors: 0 });
 
@@ -53,6 +53,8 @@ test('sync: Pass confirms the lead and writes the summary under a Screening head
   assert.deepEqual(props['Failed Flags'].multi_select, []);
   assert.equal(props['Registration No.'].rich_text[0].text.content, 'REG-9');
   assert.equal(props.Founded.date.start, '2019-04-02');
+  assert.equal(props.Website.url, 'https://aurora-collective.org/');
+  assert.equal(props.Founders.rich_text[0].text.content, 'Mali Chai, Ken Aoki');
   const blocks = calls.find((c) => /\/v1\/blocks\//.test(c.url)).body.children;
   assert.equal(blocks[0].type, 'heading_2');
   assert.ok(blocks.some((b) => b.type === 'table'));
@@ -69,14 +71,15 @@ test('sync: Decline cancels the lead and ticks only the failed flags', async () 
 });
 
 test('sync: Unclear leaves Status as Pending and keeps existing registration data', async () => {
-  const existing = row({ 'Registration No.': { rich_text: [{ plain_text: 'MINE-1' }] }, Founded: { date: { start: '2018-01-01' } } });
-  const calls = mockFetch(syncRoutes({ extraRows: [existing], events: finished(resultBlock(eight({ 4: 'UNCLEAR' }), { registration_no: 'AGENT-2', founded: '2020' })) }));
+  const existing = row({ 'Registration No.': { rich_text: [{ plain_text: 'MINE-1' }] }, Founded: { date: { start: '2018-01-01' } }, Website: { url: 'https://mine.example/' }, Founders: { rich_text: [{ plain_text: 'Mine' }] } });
+  const calls = mockFetch(syncRoutes({ extraRows: [existing], events: finished(resultBlock(eight({ 4: 'UNCLEAR' }), { registration_no: 'AGENT-2', founded: '2020', website: 'https://agent.example/', founders: 'Agent' })) }));
   await handleScreeningApi(syncRequest(), env(), 'sync');
   const props = pageUpdate(calls);
   assert.equal(props['Screening Result'].select.name, 'Unclear');
   assert.equal('Status' in props, false);
   assert.equal('Registration No.' in props, false);
   assert.equal('Founded' in props, false);
+  assert.equal('Website' in props || 'Founders' in props, false);
 });
 
 test('sync: a still-running session is left alone', async () => {

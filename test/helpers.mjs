@@ -17,18 +17,10 @@ export const env = () => ({
 });
 
 export const goodLead = () => ({
-  companyName: 'Aurora Collective',
-  website: 'aurora-collective.org',
-  country: 'Thailand',
-  registrationNumber: '0105561000001',
-  registrationDate: '2019-04-02',
-  founders: 'Mali Chai, Ken Aoki',
-  teamStructure: '6 people: 2 curators, 2 producers, 1 designer, 1 ops',
-  projectType: 'Culture and social causes',
-  budgetRange: '$15k-$50k',
-  timeline: '3-6 months',
   contactName: 'Mali Chai',
+  companyName: 'Aurora Collective',
   contactEmail: 'Mali@Aurora-Collective.org',
+  project: 'A touring exhibition about community radio.\n\nWe need identity and signage.',
 });
 
 export function resetCaches() {
@@ -78,8 +70,9 @@ export const row = (overrides = {}) => ({
   created_time: '2026-10-09T09:00:00Z',
   properties: {
     Name: { title: [{ plain_text: 'Aurora Collective' }] },
-    Website: { url: 'https://aurora-collective.org/' },
-    Founders: { rich_text: [{ plain_text: 'Mali Chai' }] },
+    Email: { email: 'mali@aurora-collective.org' },
+    Website: { url: null },
+    Founders: { rich_text: [] },
     'Registration No.': { rich_text: [] },
     Founded: { date: null },
     'Screening Session': { rich_text: [{ plain_text: 'sesn_1' }] },

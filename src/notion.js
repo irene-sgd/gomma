@@ -33,6 +33,8 @@ export function readRow(page) {
     id: page.id,
     createdTime: page.created_time,
     companyName: text(p.Name),
+    contactEmail: p.Email?.email || '',
+    project: text(p.Topic),
     website: p.Website?.url || '',
     founders: text(p.Founders),
     registrationNumber: text(p['Registration No.']),
@@ -113,34 +115,19 @@ export async function createLeadPage(env, lead) {
     Category: sel('Client'),
     Status: { status: { name: 'Pending' } },
     'Screening Result': sel('Not screened'),
-    Website: { url: lead.website },
     Email: { email: lead.contactEmail },
     'Contact Name': rt(lead.contactName),
-    Country: rt(lead.country),
-    Founders: rt(lead.founders),
-    'Team Structure': rt(lead.teamStructure),
-    'Project Type': sel(lead.projectType),
-    'Budget Range': rt(lead.budgetRange),
-    Timeline: rt(lead.timeline),
+    Topic: rt(lead.project),
     'Master Project Dashboard': { relation: [{ id: env.PROJECT_PAGE_ID }] },
     'Area Category': { relation: [{ id: env.AREA_PAGE_ID }] },
   };
-  if (lead.registrationNumber) properties['Registration No.'] = rt(lead.registrationNumber);
-  if (lead.registrationDate) properties.Founded = { date: { start: lead.registrationDate } };
 
   const children = [
     heading('Application'),
     bullet('Company', lead.companyName),
-    bullet('Website', lead.website),
-    bullet('Country', lead.country),
-    bullet('Registration number', lead.registrationNumber),
-    bullet('Registration date', lead.registrationDate),
-    bullet('Founders', lead.founders),
-    bullet('Team structure', lead.teamStructure),
-    bullet('Project type', lead.projectType),
-    bullet('Budget range', lead.budgetRange),
-    bullet('Timeline', lead.timeline),
-    bullet('Contact', `${lead.contactName} <${lead.contactEmail}>`),
+    bullet('Contact', lead.contactName),
+    bullet('Email', lead.contactEmail),
+    bullet('Project', lead.project),
   ];
 
   const page = await ok(
