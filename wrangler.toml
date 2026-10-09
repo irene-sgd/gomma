@@ -17,7 +17,7 @@ namespace_id = "1001"
 # Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY
 [vars]
 ALLOWED_ORIGIN = "https://gomma.cc"
-INTAKE_ENABLED = "true"
+INTAKE_ENABLED = "false"
 AUTO_SCREEN = "false"
 AGENT_ID = "agent_01QfxayFLEQDwMpqcirJC1xA"
 AGENT_VERSION = "1"
