@@ -1,6 +1,13 @@
+import { handleIntake } from './src/intake.js';
+import { handleScreeningApi } from './src/screening-api.js';
+
 export default {
-  async fetch(request) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/api/intake') return handleIntake(request, env, ctx);
+    if (url.pathname === '/api/screening/start') return handleScreeningApi(request, env, 'start');
+    if (url.pathname === '/api/screening/sync') return handleScreeningApi(request, env, 'sync');
 
     if (request.method === 'OPTIONS') {
       return new Response(null, {
