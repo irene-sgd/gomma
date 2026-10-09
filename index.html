@@ -30,7 +30,7 @@
   nav {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 0.75rem;
     pointer-events: all;
   }
 
@@ -66,6 +66,13 @@
   nav a.cta:active { transform: scale(1); opacity: 0.7; }
   nav a.cta:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
 
+  nav a.cta.ghost {
+    background: transparent;
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px #7c7c7c;
+  }
+  nav a.cta.ghost:hover { color: #ffffff; box-shadow: inset 0 0 0 1px #ffffff; }
+
   @media (prefers-reduced-motion: reduce) {
     nav a.cta { transition: none; }
     nav a.cta:hover { transform: none; }
@@ -93,6 +100,7 @@
       <path d="M91.151 12.1748V9.93316H102.141V12.1748H91.151ZM98.4497 0.287918L106 15.7121H103.043L96.1845 1.3162H97.2542L90.396 15.7121H87.4387L94.9891 0.287918H98.4497Z" fill="white"/>
     </svg>
     <nav>
+      <a href="/pricing/" class="cta ghost">Pricing</a>
       <a href="/quote/" class="cta">Get quote</a>
     </nav>
   </div>
