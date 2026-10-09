@@ -71,7 +71,7 @@ test('missing secrets or disabled intake returns 503', async () => {
   assert.equal((await handleIntake(intakeRequest(goodLead()), { ...env(), INTAKE_ENABLED: 'false' }, ctx())).status, 503);
 });
 
-test('a valid lead creates one linked CRM row and does not start the agent by default', async () => {
+test('a valid lead goes to Inbound Leads, not Master CRM, and does not start the agent by default', async () => {
   const calls = mockFetch(routes());
   const res = await handleIntake(intakeRequest(goodLead()), env(), ctx());
   assert.equal(res.status, 202);
@@ -80,18 +80,16 @@ test('a valid lead creates one linked CRM row and does not start the agent by de
   const create = calls.filter((c) => c.method === 'POST' && c.url.endsWith('/v1/pages'));
   assert.equal(create.length, 1);
   const { parent, properties, children } = create[0].body;
-  assert.deepEqual(parent, { type: 'data_source_id', data_source_id: env().CRM_DATA_SOURCE_ID });
-  assert.equal(properties.Category.select.name, 'Client');
-  assert.equal(properties.Status.status.name, 'Pending');
+  assert.deepEqual(parent, { type: 'data_source_id', data_source_id: env().INBOX_DATA_SOURCE_ID });
+  assert.notEqual(parent.data_source_id, env().CRM_DATA_SOURCE_ID);
+  assert.equal(properties.Stage.select.name, 'New');
   assert.equal(properties['Screening Result'].select.name, 'Not screened');
-  assert.equal(properties['Master Project Dashboard'].relation[0].id, env().PROJECT_PAGE_ID);
-  assert.equal(properties['Area Category'].relation[0].id, env().AREA_PAGE_ID);
   assert.equal(properties.Email.email, 'mali@aurora-collective.org');
   assert.equal(properties['Contact Name'].rich_text[0].text.content, 'Mali Chai');
   assert.equal(properties.Name.title[0].text.content, 'Aurora Collective');
   assert.match(properties.Topic.rich_text[0].text.content, /touring exhibition/);
-  assert.ok(children.some((b) => b.type === 'bulleted_list_item' && b.bulleted_list_item.rich_text[0].text.content.startsWith('Project:')));
-  assert.equal(children[0].type, 'heading_2');
+  assert.equal(['Category', 'Status', 'Master Project Dashboard', 'Area Category'].some((k) => k in properties), false);
+  assert.equal(children, undefined);
   assert.ok(!calls.some((c) => c.url.includes('anthropic.com')));
 });
 

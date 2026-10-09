@@ -11,7 +11,6 @@ export const FLAGS = [
   '7 Under 2.5 years',
   '8 No specialists',
 ];
-const STATUS_BY_RESULT = { Pass: 'Confirmed', Decline: 'Canceled' };
 const CHECK_RESULTS = ['PASS', 'FAIL', 'UNCLEAR'];
 
 const anthropic = (env, path, body) =>
@@ -181,7 +180,6 @@ async function applyResult(env, row, parsed) {
   if (parsed.founded && !row.founded) properties.Founded = { date: { start: parsed.founded } };
   if (parsed.website && !row.website) properties.Website = { url: parsed.website };
   if (parsed.founders && !row.founders) properties.Founders = rt(parsed.founders);
-  if (STATUS_BY_RESULT[parsed.result]) properties.Status = { status: { name: STATUS_BY_RESULT[parsed.result] } };
   await updateLead(env, row.id, properties);
 }
 

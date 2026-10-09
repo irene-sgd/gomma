@@ -7,6 +7,7 @@ export const env = () => ({
   AGENT_ID: 'agent_1',
   AGENT_VERSION: '1',
   ENVIRONMENT_ID: 'env_1',
+  INBOX_DATA_SOURCE_ID: '798107ff-92d5-4e6c-878a-af8373606cab',
   CRM_DATA_SOURCE_ID: '3097286d-055f-8027-821c-000b6bbfb421',
   PROJECT_PAGE_ID: '3287286d-055f-80c0-9ca4-f9c214de534c',
   AREA_PAGE_ID: '31d7286d-055f-80ad-8253-fb00a192c8ef',
@@ -67,8 +68,14 @@ export const ctx = () => {
 
 export const row = (overrides = {}) => ({
   id: 'row-1',
+  url: 'https://www.notion.so/row1',
   created_time: '2026-10-09T09:00:00Z',
   properties: {
+    'Contact Name': { rich_text: [{ plain_text: 'Mali Chai' }] },
+    Topic: { rich_text: [{ plain_text: 'A touring exhibition.' }] },
+    Stage: { select: { name: 'New' } },
+    'Failed Flags': { multi_select: [] },
+    'Master CRM': { relation: [] },
     Name: { title: [{ plain_text: 'Aurora Collective' }] },
     Email: { email: 'mali@aurora-collective.org' },
     Website: { url: null },

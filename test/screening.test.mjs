@@ -42,14 +42,14 @@ const finished = (text) => [
 ];
 const pageUpdate = (calls) => calls.filter((c) => c.method === 'PATCH' && /\/v1\/pages\//.test(c.url)).pop().body.properties;
 
-test('sync: Pass confirms the lead and writes the summary under a Screening heading', async () => {
+test('sync: Pass records the result and writes the summary under a Screening heading', async () => {
   const calls = mockFetch(syncRoutes({ events: finished(resultBlock(eight(), { registration_no: 'REG-9', founded: '2019-04-02', website: 'https://aurora-collective.org/', founders: 'Mali Chai, Ken Aoki' })) }));
   const res = await handleScreeningApi(syncRequest(), env(), 'sync');
   assert.deepEqual(await res.json(), { ok: true, checked: 1, running: 0, finished: 1, failed: 0, errors: 0 });
 
   const props = pageUpdate(calls);
   assert.equal(props['Screening Result'].select.name, 'Pass');
-  assert.equal(props.Status.status.name, 'Confirmed');
+  assert.equal('Status' in props, false);
   assert.deepEqual(props['Failed Flags'].multi_select, []);
   assert.equal(props['Registration No.'].rich_text[0].text.content, 'REG-9');
   assert.equal(props.Founded.date.start, '2019-04-02');
@@ -61,16 +61,16 @@ test('sync: Pass confirms the lead and writes the summary under a Screening head
   assert.ok(!JSON.stringify(blocks).includes('"checks"'));
 });
 
-test('sync: Decline cancels the lead and ticks only the failed flags', async () => {
+test('sync: Decline ticks only the failed flags', async () => {
   const calls = mockFetch(syncRoutes({ events: finished(resultBlock(eight({ 5: 'FAIL', 7: 'FAIL', 3: 'UNCLEAR' }))) }));
   await handleScreeningApi(syncRequest(), env(), 'sync');
   const props = pageUpdate(calls);
   assert.equal(props['Screening Result'].select.name, 'Decline');
-  assert.equal(props.Status.status.name, 'Canceled');
+  assert.equal('Status' in props, false);
   assert.deepEqual(props['Failed Flags'].multi_select.map((f) => f.name), ['5 Right-wing', '7 Under 2.5 years']);
 });
 
-test('sync: Unclear leaves Status as Pending and keeps existing registration data', async () => {
+test('sync: Unclear keeps existing registration data the staff already filled', async () => {
   const existing = row({ 'Registration No.': { rich_text: [{ plain_text: 'MINE-1' }] }, Founded: { date: { start: '2018-01-01' } }, Website: { url: 'https://mine.example/' }, Founders: { rich_text: [{ plain_text: 'Mine' }] } });
   const calls = mockFetch(syncRoutes({ extraRows: [existing], events: finished(resultBlock(eight({ 4: 'UNCLEAR' }), { registration_no: 'AGENT-2', founded: '2020', website: 'https://agent.example/', founders: 'Agent' })) }));
   await handleScreeningApi(syncRequest(), env(), 'sync');
@@ -134,15 +134,15 @@ test('sync and start require a Notion key that can read the CRM', async () => {
 
 const pageReply = (parentDs, properties) => ({ ...row(properties), parent: { type: 'data_source_id', data_source_id: parentDs } });
 
-test('start: refuses rows outside the CRM, running rows and already-screened rows', async () => {
+test('start: refuses rows outside Inbound Leads, running rows and already-screened rows', async () => {
   const page = '3787286d055f80d7b363fffe0cec3bed';
   mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply('ffffffff-0000-0000-0000-000000000000', {}) }]);
   assert.equal((await handleScreeningApi(startRequest(page), env(), 'start')).status, 403);
 
-  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().CRM_DATA_SOURCE_ID, {}) }]);
+  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().INBOX_DATA_SOURCE_ID, {}) }]);
   assert.equal((await handleScreeningApi(startRequest(page), env(), 'start')).status, 409);
 
-  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().CRM_DATA_SOURCE_ID, { 'Screening Session': { rich_text: [] }, 'Screening Result': { select: { name: 'Pass' } } }) }]);
+  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().INBOX_DATA_SOURCE_ID, { 'Screening Session': { rich_text: [] }, 'Screening Result': { select: { name: 'Pass' } } }) }]);
   assert.equal((await handleScreeningApi(startRequest(page), env(), 'start')).status, 409);
 
   assert.equal((await handleScreeningApi(startRequest('not-an-id'), env(), 'start')).status, 400);
@@ -151,7 +151,7 @@ test('start: refuses rows outside the CRM, running rows and already-screened row
 test('start: an unscreened row gets one session and its session id recorded', async () => {
   const idle = { 'Screening Session': { rich_text: [] } };
   const calls = mockFetch([
-    { method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().CRM_DATA_SOURCE_ID, idle) },
+    { method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().INBOX_DATA_SOURCE_ID, idle) },
     { method: 'POST', match: /anthropic\.com\/v1\/sessions$/, reply: { id: 'sesn_9' } },
     { method: 'PATCH', match: /\/v1\/pages\//, reply: {} },
   ]);
@@ -171,5 +171,104 @@ test('sync: a row another sync already finished is not written twice', async () 
     { method: 'PATCH', match: /\/v1\/(pages|blocks)\//, reply: {} },
   ]);
   await handleScreeningApi(syncRequest(), env(), 'sync');
+  assert.ok(!calls.some((c) => c.method === 'PATCH'));
+});
+
+// ---- Qualify: moving a screened lead into Master CRM ----
+const QUALIFY_PAGE = '3787286d055f80d7b363fffe0cec3bed';
+const qualifyRequest = (pageId = QUALIFY_PAGE, token = 'ntn_user') =>
+  new Request('https://dashboard.gomma.cc/api/leads/qualify', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ pageId }),
+  });
+const CRM_QUERY = /data_sources\/3097286d[^/]*\/query$/;
+const inboxRow = (overrides) => pageReply(env().INBOX_DATA_SOURCE_ID, overrides);
+const qualifyRoutes = (overrides, { crmMatch = false } = {}) => [
+  { method: 'GET', match: /\/v1\/pages\//, reply: inboxRow(overrides) },
+  { method: 'POST', match: CRM_QUERY, reply: { results: crmMatch ? [{ id: 'crm-existing' }] : [] } },
+  { method: 'POST', match: /\/v1\/pages$/, reply: { id: 'crm-new' } },
+  { method: 'PATCH', match: /\/v1\/pages\//, reply: {} },
+];
+const pass = { 'Screening Session': { rich_text: [{ plain_text: 'sesn_1' }] }, 'Screening Result': { select: { name: 'Pass' } } };
+
+test('qualify: a Pass lead becomes one linked, confirmed Master CRM row', async () => {
+  const calls = mockFetch(qualifyRoutes({
+    ...pass,
+    Website: { url: 'https://aurora-collective.org/' },
+    Founders: { rich_text: [{ plain_text: 'Mali Chai' }] },
+    'Registration No.': { rich_text: [{ plain_text: 'REG-9' }] },
+    Founded: { date: { start: '2019-04-02' } },
+    'Failed Flags': { multi_select: [{ name: '7 Under 2.5 years' }] },
+  }));
+  const res = await handleScreeningApi(qualifyRequest(), env(), 'qualify');
+  assert.deepEqual(await res.json(), { ok: true, crmId: 'crm-new' });
+
+  const create = calls.find((c) => c.method === 'POST' && c.url.endsWith('/v1/pages')).body;
+  assert.deepEqual(create.parent, { type: 'data_source_id', data_source_id: env().CRM_DATA_SOURCE_ID });
+  const p = create.properties;
+  assert.equal(p.Category.select.name, 'Client');
+  assert.equal(p.Status.status.name, 'Confirmed');
+  assert.equal(p['Screening Result'].select.name, 'Pass');
+  assert.equal(p['Master Project Dashboard'].relation[0].id, env().PROJECT_PAGE_ID);
+  assert.equal(p['Area Category'].relation[0].id, env().AREA_PAGE_ID);
+  assert.equal(p.Email.email, 'mali@aurora-collective.org');
+  assert.equal(p.Website.url, 'https://aurora-collective.org/');
+  assert.equal(p['Registration No.'].rich_text[0].text.content, 'REG-9');
+  assert.equal(p.Founded.date.start, '2019-04-02');
+  assert.deepEqual(p['Failed Flags'].multi_select, [{ name: '7 Under 2.5 years' }]);
+  assert.equal(create.children[0].paragraph.rich_text[1].text.link.url, 'https://www.notion.so/row1');
+
+  const link = calls.filter((c) => c.method === 'PATCH').pop().body.properties;
+  assert.equal(link.Stage.select.name, 'Qualified');
+  assert.equal(link['Master CRM'].relation[0].id, 'crm-new');
+});
+
+test('qualify: an Unclear lead enters Master CRM as Pending', async () => {
+  const calls = mockFetch(qualifyRoutes({ ...pass, 'Screening Result': { select: { name: 'Unclear' } } }));
+  await handleScreeningApi(qualifyRequest(), env(), 'qualify');
+  assert.equal(calls.find((c) => c.url.endsWith('/v1/pages')).body.properties.Status.status.name, 'Pending');
+});
+
+test('qualify: repeating it links the existing Master CRM row instead of creating a duplicate', async () => {
+  const calls = mockFetch(qualifyRoutes(pass, { crmMatch: true }));
+  const res = await handleScreeningApi(qualifyRequest(), env(), 'qualify');
+  assert.deepEqual(await res.json(), { ok: true, crmId: 'crm-existing' });
+  assert.ok(!calls.some((c) => c.method === 'POST' && c.url.endsWith('/v1/pages')));
+  assert.equal(calls.filter((c) => c.method === 'PATCH').pop().body.properties['Master CRM'].relation[0].id, 'crm-existing');
+});
+
+test('qualify: refuses leads that are already qualified, still screening, declined or never screened', async () => {
+  const cases = [
+    [{ ...pass, Stage: { select: { name: 'Qualified' } } }, 'already_qualified'],
+    [{ ...pass, 'Master CRM': { relation: [{ id: 'crm-1' }] } }, 'already_qualified'],
+    [{ 'Screening Session': { rich_text: [{ plain_text: 'sesn_1' }] }, 'Screening Result': { select: { name: 'Not screened' } } }, 'still_screening'],
+    [{ ...pass, 'Screening Result': { select: { name: 'Decline' } } }, 'not_eligible'],
+    [{ 'Screening Session': { rich_text: [] }, 'Screening Result': { select: { name: 'Not screened' } } }, 'not_eligible'],
+  ];
+  for (const [overrides, error] of cases) {
+    const calls = mockFetch(qualifyRoutes(overrides));
+    const res = await handleScreeningApi(qualifyRequest(), env(), 'qualify');
+    assert.equal(res.status, 409, error);
+    assert.equal((await res.json()).error, error);
+    assert.ok(!calls.some((c) => c.method === 'POST' || c.method === 'PATCH'), error);
+  }
+});
+
+test('qualify: needs a key that can read the lead, and the lead must be in Inbound Leads', async () => {
+  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: { status: 404, body: {} } }]);
+  assert.equal((await handleScreeningApi(qualifyRequest(), env(), 'qualify')).status, 403);
+  mockFetch([{ method: 'GET', match: /\/v1\/pages\//, reply: pageReply(env().CRM_DATA_SOURCE_ID, pass) }]);
+  assert.equal((await handleScreeningApi(qualifyRequest(), env(), 'qualify')).status, 403);
+});
+
+test('qualify: a Notion failure returns 502 and leaves the lead unqualified', async () => {
+  const calls = mockFetch([
+    { method: 'GET', match: /\/v1\/pages\//, reply: inboxRow(pass) },
+    { method: 'POST', match: CRM_QUERY, reply: { results: [] } },
+    { method: 'POST', match: /\/v1\/pages$/, reply: { status: 400, body: {} } },
+  ]);
+  const res = await handleScreeningApi(qualifyRequest(), env(), 'qualify');
+  assert.equal(res.status, 502);
   assert.ok(!calls.some((c) => c.method === 'PATCH'));
 });
