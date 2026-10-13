@@ -277,3 +277,58 @@ test('payload marks past / current / future months', () => {
   const p = buildPayload(data, new Date('2026-10-13T05:00:00Z'));
   assert.deepEqual(p.months.map((m) => m.status), ['past', 'current', 'future']);
 });
+
+// ---- saved monthly reports (D1) ----
+import { handleReports, _resetSchema } from '../src/finance/reports.js';
+
+function fakeD1() {
+  const rows = new Map();
+  return {
+    rows,
+    prepare(sql) {
+      let args = [];
+      const stmt = {
+        bind: (...a) => { args = a; return stmt; },
+        run: async () => {
+          if (/INSERT INTO month_reports/.test(sql)) rows.set(args[0], { month: args[0], saved_at: args[1], data: args[2] });
+          return { success: true };
+        },
+        all: async () => ({ results: [...rows.values()].sort((a, b) => b.month.localeCompare(a.month)) }),
+      };
+      return stmt;
+    },
+  };
+}
+const localReq = (path, method = 'GET', hdr = {}) => new Request(`http://localhost${path}`, { method, headers: hdr });
+const reportRead = async () => ({ ledger: [H, row({ type: 'Revenue', amount: '1000', cat: 'Project' })], accounts: ACCOUNTS, forecast: forecastRows('2026-10', [1000, 0, 0, 0, 0, 0, 0]) });
+const dev = (db) => ({ FINANCE_DEV_BYPASS: 'true', FINANCE_DB: db });
+
+test('reports: refuses without Access, and says so when storage is not configured', async () => {
+  _resetSchema();
+  assert.equal((await handleReports(new Request('https://dashboard.gomma.cc/api/finance/reports'), { CF_ACCESS_TEAM_DOMAIN: 't', CF_ACCESS_AUD: 'a', FINANCE_DB: fakeD1() })).status, 401);
+  assert.equal((await handleReports(localReq('/api/finance/reports'), { FINANCE_DEV_BYPASS: 'true' })).status, 503);
+});
+
+test('reports: saving stores a server-computed snapshot, and re-saving updates it', async () => {
+  _resetSchema();
+  const db = fakeD1();
+  const put = await handleReports(localReq('/api/finance/reports/2026-10', 'PUT'), dev(db), { read: reportRead });
+  assert.equal(put.status, 200);
+  const saved = await put.json();
+  assert.equal(saved.month, '2026-10');
+  assert.equal(saved.data.lines.find((l) => l.line === 'Revenue').actual, 1000);
+  const list = await (await handleReports(localReq('/api/finance/reports'), dev(db))).json();
+  assert.equal(list.reports.length, 1);
+  assert.equal(list.reports[0].data.lines.find((l) => l.line === 'Revenue').forecast, 1000);
+  await handleReports(localReq('/api/finance/reports/2026-10', 'PUT'), dev(db), { read: reportRead });
+  assert.equal(db.rows.size, 1);
+});
+
+test('reports: unknown month, wrong method and cross-origin writes are rejected', async () => {
+  _resetSchema();
+  const db = fakeD1();
+  assert.equal((await handleReports(localReq('/api/finance/reports/2031-01', 'PUT'), dev(db), { read: reportRead })).status, 404);
+  assert.equal((await handleReports(localReq('/api/finance/reports/2026-10', 'DELETE'), dev(db))).status, 405);
+  assert.equal((await handleReports(localReq('/api/finance/reports/2026-10', 'PUT', { Origin: 'https://evil.example' }), dev(db), { read: reportRead })).status, 403);
+  assert.equal(db.rows.size, 0);
+});

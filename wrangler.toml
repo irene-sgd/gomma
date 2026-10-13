@@ -7,6 +7,11 @@ directory = "./dashboard-dist"
 run_worker_first = ["/v1/*", "/api/*"]
 not_found_handling = "single-page-application"
 
+[[d1_databases]]
+binding = "FINANCE_DB"
+database_name = "gomma-finance"
+database_id = "9c767de6-6f3e-46ec-9cc0-fba7da211d5a"
+
 [[ratelimits]]
 name = "INTAKE_LIMITER"
 namespace_id = "1001"

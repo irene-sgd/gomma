@@ -1,5 +1,6 @@
 import { handleEstimate } from './src/estimate.js';
 import { handleFinance } from './src/finance/api.js';
+import { handleReports } from './src/finance/reports.js';
 import { handleIntake } from './src/intake.js';
 import { handleScreeningApi } from './src/screening-api.js';
 
@@ -9,6 +10,7 @@ export default {
 
     if (url.pathname === '/api/intake') return handleIntake(request, env, ctx);
     if (url.pathname === '/api/finance') return handleFinance(request, env);
+    if (url.pathname.startsWith('/api/finance/reports')) return handleReports(request, env);
     if (url.pathname === '/api/estimate') return handleEstimate(request, env);
     if (url.pathname === '/api/screening/start') return handleScreeningApi(request, env, 'start');
     if (url.pathname === '/api/screening/sync') return handleScreeningApi(request, env, 'sync');
