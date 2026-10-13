@@ -40,6 +40,7 @@ export function FinanceView() {
   const [selected, setSelected] = useState<string | null>(null)
   const [reports, setReports] = useState<Record<string, StoredReport>>({})
   const [storage, setStorage] = useState(true)
+  const [archive, setArchive] = useState(false)
 
   useEffect(() => {
     fetchReports().then((list) => {
@@ -120,9 +121,26 @@ export function FinanceView() {
   }))
 
   return (
-    <Shell>
+    <Shell
+      action={
+        Object.keys(reports).length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setArchive((v) => !v)}
+            aria-pressed={archive}
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+          >
+            <SparklesIcon className="size-4" aria-hidden />
+            Reports
+          </button>
+        ) : null
+      }
+    >
       <div className="flex flex-col gap-2">
         <ReviewWidget
+          key={archive ? "archive" : "bar"}
+          archive={archive}
+          onArchiveClose={() => setArchive(false)}
           months={data.months}
           reports={reports}
           storage={storage}
@@ -420,25 +438,35 @@ function ReviewWidget({
   months,
   reports,
   storage,
+  archive,
+  onArchiveClose,
   onSave,
 }: {
   months: FinanceMonth[]
   reports: Record<string, StoredReport>
   storage: boolean
+  archive: boolean
+  onArchiveClose: () => void
   onSave: (month: string) => Promise<void>
 }) {
   const { closed, month: reviewMonth } = reviewMonthOf(months)
-  const [open, setOpen] = useState(false)
-  const [picked, setPicked] = useState(reviewMonth.month)
+  const [open, setOpen] = useState(archive)
+  const [dismissed, setDismissed] = useState(false)
+  const [picked, setPicked] = useState(
+    archive ? (Object.keys(reports).sort().at(-1) ?? reviewMonth.month) : reviewMonth.month
+  )
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
   const live = months.find((m) => m.month === picked)
   const stored = reports[picked]
-  const month = stored?.data ?? live ?? reviewMonth
+  // A report saved while the month was still running is not final once the month has closed.
+  const stale = Boolean(stored && stored.data.status !== "past" && live?.status === "past")
+  const saved = Boolean(stored) && !stale
+  const month = (!stale ? stored?.data : undefined) ?? live ?? reviewMonth
 
-  const choices = Array.from(
-    new Set([reviewMonth.month, ...Object.keys(reports)])
+  const choices = (
+    archive ? Object.keys(reports) : Array.from(new Set([reviewMonth.month, ...Object.keys(reports)]))
   ).sort((a, b) => (a < b ? 1 : -1))
 
   async function save() {
@@ -455,9 +483,12 @@ function ReviewWidget({
     }
   }
 
+  // Closing saves the report and removes the bar from the page; the report stays in the database.
   async function closeReport() {
-    if (!stored && storage && !(await save())) return
+    if (archive) return onArchiveClose()
+    if ((!stored || (stale && !archive)) && storage && !(await save())) return
     setOpen(false)
+    setDismissed(true)
   }
 
   const [y, m] = reviewMonth.month.split("-").map(Number)
@@ -474,7 +505,11 @@ function ReviewWidget({
   const reportPlan = pnl([month], "forecast")
   const reportMargin = margin(reportActual.operating, reportActual.revenue)
   const reportPlanMargin = margin(reportPlan.operating, reportPlan.revenue)
-  const barStored = reports[reviewMonth.month]
+  const reviewReport = reports[reviewMonth.month]
+  const reviewSaved = Boolean(
+    reviewReport && (reviewReport.data.status === "past" || reviewMonth.status !== "past")
+  )
+  if (!archive && (reviewSaved || dismissed)) return null
 
   return (
     <section className="rounded-lg bg-accent">
@@ -488,15 +523,23 @@ function ReviewWidget({
         >
           <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
             <SparklesIcon className="size-5 shrink-0" aria-hidden />
-            <span className="text-lg font-bold">Monthly report</span>
-            <Badge>{monthName(reviewMonth.month)}</Badge>
-            {!closed && <Badge>Partial</Badge>}
-            <Badge variant={reviewMonth.off === 0 ? "success" : "danger"}>
-              {reviewMonth.onTrack} / {reviewMonth.lines.length}
-            </Badge>
-            <Badge variant={barStored ? "success" : "active"}>
-              {barStored ? `Saved ${savedOn(barStored.savedAt)}` : reviewDate}
-            </Badge>
+            <span className="text-lg font-bold">
+              {archive ? "Saved reports" : "Monthly report"}
+            </span>
+            {!archive && (
+              <>
+                <Badge>{monthName(reviewMonth.month)}</Badge>
+                {!closed && <Badge>Partial</Badge>}
+                <Badge variant={reviewMonth.off === 0 ? "success" : "danger"}>
+                  {reviewMonth.onTrack} / {reviewMonth.lines.length}
+                </Badge>
+              </>
+            )}
+            {archive ? (
+              <Badge variant="success">Saved</Badge>
+            ) : (
+              <Badge variant="active">{reviewDate}</Badge>
+            )}
           </span>
           {!open && (
             <ChevronDownIcon className="size-5 shrink-0" aria-hidden />
@@ -507,7 +550,7 @@ function ReviewWidget({
             type="button"
             onClick={closeReport}
             disabled={busy}
-            aria-label={stored || !storage ? "Close report" : "Save and close report"}
+            aria-label={saved || !storage || archive ? "Close report" : "Save and close report"}
             className="m-3 flex size-10 shrink-0 items-center justify-center self-center rounded-full bg-primary text-primary-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
           >
             <XIcon className="size-5" aria-hidden />
@@ -533,8 +576,8 @@ function ReviewWidget({
                 ))}
               </select>
             </label>
-            {stored && <Badge variant="success">Saved {savedOn(stored.savedAt)}</Badge>}
-            {!stored && storage && <Badge>Not saved</Badge>}
+            {saved && stored && <Badge variant="success">Saved {savedOn(stored.savedAt)}</Badge>}
+            {!saved && storage && <Badge>Not saved</Badge>}
             {!storage && <Badge>Storage unavailable</Badge>}
             {failed && <Badge variant="danger">Not saved</Badge>}
             {busy && <Badge>Saving</Badge>}
@@ -643,10 +686,19 @@ function ReviewWidget({
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  action,
+}: {
+  children: React.ReactNode
+  action?: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="px-2 pt-2 text-2xl font-bold">Finance</h1>
+      <div className="flex items-center justify-between gap-2 px-2 pt-2">
+        <h1 className="text-2xl font-bold">Finance</h1>
+        {action}
+      </div>
       {children}
     </div>
   )
