@@ -39,6 +39,32 @@ export async function fetchFinance(): Promise<FinanceData> {
   return res.json()
 }
 
+export type StoredReport = {
+  month: string
+  savedAt: string
+  data: FinanceMonth
+}
+
+// null means saved reports are unavailable (storage not configured); the page still works live.
+export async function fetchReports(): Promise<StoredReport[] | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/finance/reports`, { credentials: "include" })
+    if (!res.ok) return null
+    return ((await res.json()) as { reports: StoredReport[] }).reports
+  } catch {
+    return null
+  }
+}
+
+export async function saveReport(month: string): Promise<StoredReport> {
+  const res = await fetch(`${API_BASE}/api/finance/reports/${month}`, {
+    method: "PUT",
+    credentials: "include",
+  })
+  if (!res.ok) throw new Error(String(res.status))
+  return res.json()
+}
+
 export const money = (n: number) =>
   `${n < 0 ? "−" : ""}฿${Math.round(Math.abs(n)).toLocaleString()}`
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDownIcon, SparklesIcon } from "lucide-react"
+import { ChevronDownIcon, RefreshCwIcon, SparklesIcon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +18,7 @@ import { Metric, SectionLabel } from "@/components/dashboard/primitives"
 import { CashChart, FlowChart, MarginChart } from "@/components/finance/finance-charts"
 import {
   fetchFinance,
+  fetchReports,
   improvements,
   line,
   margin,
@@ -25,9 +26,11 @@ import {
   monthName,
   pct,
   pnl,
+  saveReport,
   signedMoney,
   type FinanceData,
   type FinanceMonth,
+  type StoredReport,
 } from "@/lib/finance"
 import { cn } from "cn"
 
@@ -35,6 +38,15 @@ export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
   const [error, setError] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
+  const [reports, setReports] = useState<Record<string, StoredReport>>({})
+  const [storage, setStorage] = useState(true)
+
+  useEffect(() => {
+    fetchReports().then((list) => {
+      if (list === null) setStorage(false)
+      else setReports(Object.fromEntries(list.map((r) => [r.month, r])))
+    })
+  }, [])
 
   useEffect(() => {
     fetchFinance()
@@ -110,7 +122,15 @@ export function FinanceView() {
   return (
     <Shell>
       <div className="flex flex-col gap-2">
-        <ReviewWidget key={reviewMonthOf(data.months).month.month} months={data.months} />
+        <ReviewWidget
+          months={data.months}
+          reports={reports}
+          storage={storage}
+          onSave={async (month) => {
+            const saved = await saveReport(month)
+            setReports((prev) => ({ ...prev, [saved.month]: saved }))
+          }}
+        />
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Metric
             label="Cash"
@@ -383,11 +403,8 @@ export function FinanceView() {
   )
 }
 
-// The review is done on the 1st, for the month that just closed. Until a month has closed,
-// the running month is shown as a preview with its review date. It opens each new month and
-// stays collapsed once dismissed.
-const reviewKey = (month: string) => `finance-review-collapsed:${month}`
-
+// The monthly report. The whole bar is the button. Closing it with the X saves that month's
+// actuals vs forecast to the database; saved months are shown as they were saved.
 function reviewMonthOf(months: FinanceMonth[]) {
   const closed = months.filter((m) => m.status === "past").at(-1)
   return {
@@ -396,27 +413,54 @@ function reviewMonthOf(months: FinanceMonth[]) {
   }
 }
 
-function ReviewWidget({ months }: { months: FinanceMonth[] }) {
-  const { closed, month } = reviewMonthOf(months)
-  // Rendered only after the data has loaded in the browser, so storage is readable here.
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(reviewKey(month.month)) !== "1"
-    } catch {
-      return true
-    }
-  })
+const savedOn = (iso: string) =>
+  new Date(iso).toLocaleDateString("en", { day: "numeric", month: "short" })
 
-  function toggle() {
-    const next = !open
-    setOpen(next)
+function ReviewWidget({
+  months,
+  reports,
+  storage,
+  onSave,
+}: {
+  months: FinanceMonth[]
+  reports: Record<string, StoredReport>
+  storage: boolean
+  onSave: (month: string) => Promise<void>
+}) {
+  const { closed, month: reviewMonth } = reviewMonthOf(months)
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState(reviewMonth.month)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  const live = months.find((m) => m.month === picked)
+  const stored = reports[picked]
+  const month = stored?.data ?? live ?? reviewMonth
+
+  const choices = Array.from(
+    new Set([reviewMonth.month, ...Object.keys(reports)])
+  ).sort((a, b) => (a < b ? 1 : -1))
+
+  async function save() {
+    setBusy(true)
+    setFailed(false)
     try {
-      if (next) localStorage.removeItem(reviewKey(month.month))
-      else localStorage.setItem(reviewKey(month.month), "1")
-    } catch {}
+      await onSave(picked)
+      return true
+    } catch {
+      setFailed(true)
+      return false
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const [y, m] = month.month.split("-").map(Number)
+  async function closeReport() {
+    if (!stored && storage && !(await save())) return
+    setOpen(false)
+  }
+
+  const [y, m] = reviewMonth.month.split("-").map(Number)
   const reviewDate = `1 ${monthName(`${m === 12 ? y + 1 : y}-${String((m % 12) + 1).padStart(2, "0")}`)}`
   const total = month.lines.length
   const todo = improvements(month)
@@ -426,44 +470,87 @@ function ReviewWidget({ months }: { months: FinanceMonth[] }) {
   const key = ["Revenue", "Operating costs", "Closing cash"]
     .map((name) => line(month, name))
     .filter((l): l is NonNullable<typeof l> => Boolean(l))
-  const reviewActual = pnl([month], "actual")
-  const reviewPlan = pnl([month], "forecast")
-  const reviewMargin = margin(reviewActual.operating, reviewActual.revenue)
-  const reviewPlanMargin = margin(reviewPlan.operating, reviewPlan.revenue)
+  const reportActual = pnl([month], "actual")
+  const reportPlan = pnl([month], "forecast")
+  const reportMargin = margin(reportActual.operating, reportActual.revenue)
+  const reportPlanMargin = margin(reportPlan.operating, reportPlan.revenue)
+  const barStored = reports[reviewMonth.month]
 
   return (
-    <Card>
-      <CardHeader>
+    <section className="rounded-lg bg-accent">
+      <div className="flex items-stretch">
         <button
           type="button"
-          onClick={toggle}
+          onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          aria-controls="finance-review-body"
-          className="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+          aria-controls="finance-report"
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg p-5 text-left outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring"
         >
           <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-            <SparklesIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <SectionLabel>Monthly actuals vs forecast review</SectionLabel>
-            <Badge>{monthName(month.month)}</Badge>
+            <SparklesIcon className="size-5 shrink-0" aria-hidden />
+            <span className="text-lg font-bold">Monthly report</span>
+            <Badge>{monthName(reviewMonth.month)}</Badge>
             {!closed && <Badge>Partial</Badge>}
-            <Badge>{reviewDate}</Badge>
-            {!open && (
-              <>
-                <Badge variant={month.off === 0 ? "success" : "danger"}>
-                  {month.onTrack} / {total}
-                </Badge>
-                {todo.length > 0 && <Badge>{todo.length} to improve</Badge>}
-              </>
-            )}
+            <Badge variant={reviewMonth.off === 0 ? "success" : "danger"}>
+              {reviewMonth.onTrack} / {reviewMonth.lines.length}
+            </Badge>
+            <Badge variant={barStored ? "success" : "active"}>
+              {barStored ? `Saved ${savedOn(barStored.savedAt)}` : reviewDate}
+            </Badge>
           </span>
-          <ChevronDownIcon
-            className={cn("size-5 shrink-0 transition-transform", open && "rotate-180")}
-            aria-hidden
-          />
+          {!open && (
+            <ChevronDownIcon className="size-5 shrink-0" aria-hidden />
+          )}
         </button>
-      </CardHeader>
+        {open && (
+          <button
+            type="button"
+            onClick={closeReport}
+            disabled={busy}
+            aria-label={stored || !storage ? "Close report" : "Save and close report"}
+            className="m-3 flex size-10 shrink-0 items-center justify-center self-center rounded-full bg-primary text-primary-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
+          >
+            <XIcon className="size-5" aria-hidden />
+          </button>
+        )}
+      </div>
+
       {open && (
-        <CardContent id="finance-review-body" className="flex flex-col gap-4">
+        <div id="finance-report" className="flex flex-col gap-4 px-5 pb-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2">
+              <span className="sr-only">Report month</span>
+              <select
+                value={picked}
+                onChange={(e) => setPicked(e.target.value)}
+                className="h-9 rounded-full bg-secondary px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+              >
+                {choices.map((c) => (
+                  <option key={c} value={c}>
+                    {monthName(c)}
+                    {reports[c] ? " · Saved" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {stored && <Badge variant="success">Saved {savedOn(stored.savedAt)}</Badge>}
+            {!stored && storage && <Badge>Not saved</Badge>}
+            {!storage && <Badge>Storage unavailable</Badge>}
+            {failed && <Badge variant="danger">Not saved</Badge>}
+            {busy && <Badge>Saving</Badge>}
+            {stored && live && storage && (
+              <button
+                type="button"
+                onClick={save}
+                disabled={busy}
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
+              >
+                <RefreshCwIcon className="size-4" aria-hidden />
+                Update
+              </button>
+            )}
+          </div>
+
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <div className="flex flex-col gap-3">
               <div>
@@ -495,8 +582,8 @@ function ReviewWidget({ months }: { months: FinanceMonth[] }) {
               ))}
               <div className="rounded-md bg-secondary p-4">
                 <p className="text-sm text-muted-foreground">Operating margin</p>
-                <p className="text-xl font-bold">{pct(reviewMargin)}</p>
-                <p className="text-xs text-muted-foreground">{pct(reviewPlanMargin)} forecast</p>
+                <p className="text-xl font-bold">{pct(reportMargin)}</p>
+                <p className="text-xs text-muted-foreground">{pct(reportPlanMargin)} forecast</p>
               </div>
             </div>
           </div>
@@ -550,9 +637,9 @@ function ReviewWidget({ months }: { months: FinanceMonth[] }) {
               </TableBody>
             </Table>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </section>
   )
 }
 
