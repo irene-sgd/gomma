@@ -21,8 +21,13 @@ namespace_id = "1002"
   limit = 3
   period = 60
 
-# Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY
+# Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY,
+# GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_SHEETS_SPREADSHEET_ID,
+# GOOGLE_FORECAST_SPREADSHEET_ID (GØMMA Studio Financial Model, Forecast tab),
+# FINANCE_ALLOWED_EMAIL (the one Google email allowed to read /api/finance)
 [vars]
+CF_ACCESS_TEAM_DOMAIN = "autumn-queen-432d.cloudflareaccess.com"
+CF_ACCESS_AUD = "c116b0199868acbd62d7379c83859a6d9393ae54960ea86c570e691a088e9ab4"
 ALLOWED_ORIGIN = "https://gomma.cc"
 INTAKE_ENABLED = "true"
 AUTO_SCREEN = "false"
