@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f4;
+    --bg3: #eeede9;
+    --text: #1a1a1a;
+    --text2: #6b6b6b;
+    --text3: #9a9a9a;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.2);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --bg2: #242424;
+      --bg3: #2e2e2e;
+      --text: #f0f0f0;
+      --text2: #a0a0a0;
+      --text3: #666;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  .gomma-logo { color: var(--text); display: block; }
+  @media (prefers-color-scheme: dark) { .gomma-logo { color: #f0f0f0; } }
+  .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+  .topbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo span { color: var(--text2); font-weight: 400; }
+  .project-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+  .project-btn { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 999px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); transition: all .15s; }
+  .project-btn:hover { background: var(--bg2); color: var(--text); }
+  .project-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .refresh-btn { font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 999px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); transition: all .15s; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { background: var(--bg2); color: var(--text); }
+  .refresh-btn.loading { opacity: .5; pointer-events: none; }
+  .spinner { width: 12px; height: 12px; border: 1.5px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  .refresh-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-bar { font-size: 11px; color: var(--text3); margin-bottom: 1.5rem; }
+  .header { padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text2); margin-bottom: 4px; }
+  .proj-title { font-size: 22px; font-weight: 600; color: var(--text); }
+  .proj-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 999px; }
+  .b-blue { background: #E6F1FB; color: #0C447C; }
+  .b-green { background: #EAF3DE; color: #27500A; }
+  .b-yellow { background: #FAEEDA; color: #633806; }
+  .b-purple { background: #EEEDFE; color: #3C3489; }
+  .b-red { background: #FCEBEB; color: #791F1F; }
+  .b-gray { background: #F1EFE8; color: #444441; }
+  .header-right { text-align: right; font-size: 12px; color: var(--text2); line-height: 2; }
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; overflow-x: auto; }
+  .tab { padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; transition: color .12s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .sl { font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--text2); margin-bottom: 10px; margin-top: 1.5rem; }
+  .sl:first-child { margin-top: 0; }
+  .mg { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .mg3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1rem; }
+  @media (max-width: 700px) { .mg { grid-template-columns: repeat(2, 1fr); } .mg3 { grid-template-columns: repeat(2, 1fr); } }
+  .mc { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .ml { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .mv { font-size: 22px; font-weight: 600; }
+  .ms { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .ct { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .two { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 12px; margin-bottom: 1rem; }
+  @media (max-width: 700px) { .two { grid-template-columns: 1fr; } }
+  .row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border); font-size: 12px; }
+  .row:last-child { border-bottom: none; }
+  .rn { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+  .p-g { background: #C0DD97; color: #27500A; }
+  .p-b { background: #B5D4F4; color: #0C447C; }
+  .p-y { background: #FAC775; color: #633806; }
+  .p-r { background: #F7C1C1; color: #791F1F; }
+  .p-v { background: #CECBF6; color: #3C3489; }
+  .p-gr { background: #D3D1C7; color: #444441; }
+  .bar-row { display: grid; grid-template-columns: 90px 1fr 60px; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-track { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-lbl { font-size: 12px; color: var(--text2); }
+  .bar-val { font-size: 12px; font-weight: 500; text-align: right; }
+  .cw { position: relative; width: 100%; height: 180px; }
+  .cw-md { position: relative; width: 100%; height: 200px; }
+  .ic { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
+  .it { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .ib { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .signal-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .signal-row:last-child { border-bottom: none; }
+  .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .st { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .ss { font-size: 12px; color: var(--text2); }
+  .qgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0; }
+  @media (max-width: 700px) { .qgrid { grid-template-columns: repeat(2, 1fr); } }
+  .qcol { padding: 10px 14px; border-right: 0.5px solid var(--border); }
+  .qcol:last-child { border-right: none; }
+  .ql { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+  .qi { font-size: 12px; color: var(--text2); line-height: 1.9; }
+  body.auth { background: #000; color: #fff; font-family: SpotifyMixUI, CircularSp-Arab, CircularSp-Cyrl, "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  body.auth .page { max-width: none; min-height: 100vh; padding: 8px; display: flex; }
+  body.auth #root { flex: 1; display: flex; }
+  .token-form { margin: auto; width: 100%; max-width: 400px; background: #121212; border-radius: 8px; padding: 32px; display: flex; flex-direction: column; align-items: stretch; gap: 16px; text-align: center; }
+  .token-form h2 { font-size: 24px; line-height: 1.25; font-weight: 700; color: #fff; }
+  .token-input { width: 100%; height: 48px; padding: 12px 16px; border: 0; border-radius: 500px; background: #1f1f1f; color: #fff; font-family: inherit; font-size: 16px; line-height: 24px; font-weight: 400; outline: none; transition: background-color 100ms; }
+  .token-input:hover { background: #292929; }
+  .token-input:focus-visible { outline: 3px solid #fff; }
+  .save-btn { align-self: center; min-height: 48px; padding: 8px 32px; border: 0; border-radius: 9999px; background: #fff; color: #000; font-family: inherit; font-size: 16px; line-height: 1; font-weight: 700; cursor: pointer; white-space: nowrap; transition: transform 33ms; }
+  .save-btn:hover { transform: scale(1.04); }
+  .save-btn:active { transform: scale(1); opacity: .7; }
+  .save-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .error-msg { background: #1f1f1f; color: #fff; border-radius: 8px; padding: 12px 16px; font-size: 14px; }
+  .loading-screen { margin: auto; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .loading-screen p { font-size: 14px; color: #b3b3b3; }
+  .big-spinner { width: 32px; height: 32px; border: 3px solid #3b3b3b; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .save-btn, .token-input { transition: none; } .save-btn:hover { transform: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="root"></div>
+</div>
+
+<script>
+var TOKEN_KEY = 'notion_bi_token';
+var activeTab = 'exec';
+var activeProject = 'pausa';
+var charts = {};
+var liveData = {};
+
+var PROJECTS = {
+  pausa:  { id:'PRJ-7',  name:'PAUSA',                      notionId:'2fc7286d055f8015b30af3e7ee706666', financeFilter:'PAUSA' },
+  knectd: { id:'PRJ-13', name:'KNECTD',                     notionId:'3187286d055f803ba0ffc33f8dc4a4a5', financeFilter:'KNECTD' },
+  gomma:  { id:'PRJ-24', name:'GOMMA Studio',               notionId:'3287286d055f80c09ca4f9c214de534c', financeFilter:'GOMMA' },
+  barcamp:{ id:'PRJ-6',  name:'BarCamp',                    notionId:'2fc7286d055f801289f8c3d8b61066ef', financeFilter:'BarCamp' },
+  mon:    { id:'PRJ-25', name:'Mon Durian',                  notionId:'3307286d055f80cf91e8d87440c7a7c9', financeFilter:'Mon' },
+  ai:     { id:'PRJ-21', name:'AI Agent Assistant',          notionId:'3237286d055f80d9bd03ef1a67246fc1', financeFilter:'AI' },
+};
+
+var STATIC = {
+  pausa: {
+    type:'Thai Cacao Powder · B2B + Consumer', location:'Bangkok, TH', started:'Jan 17, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Pivot: Powder → Primary',c:'b-yellow'},{t:'Pre-Revenue',c:'b-purple'}],
+    signals:[
+      {c:'#639922',t:'Product-market resonance confirmed',d:'73% of 15 tasters rated 4–5 stars. Refreshing, fruity, and light/clean dominate taste descriptors.'},
+      {c:'#639922',t:'B2B lead from tasting event',d:'Bar industry contact (mmybar.com) flagged product as "perfect for cocktails and mocktails."'},
+      {c:'#EF9F27',t:'Pitch deck update overdue',d:'Cacao powder pivot deck (TSK-246) was due Apr 2. Budget, pricing, and TAMSAMSOM slides outstanding.'},
+      {c:'#E24B4A',t:'Zero revenue · pre-investment stage',d:'฿6,400 spent, ฿0 in. Funding round and first B2B client are the Q2 unlock conditions.'},
+    ],
+    okrs:[{t:'Pausa gets funding',s:'In Progress',sc:'p-y'},{t:'Pitch deck ready for investors',s:'In Progress',sc:'p-y'},{t:'First B2B client signed',s:'Not Started',sc:'p-gr'}],
+    spend:6400, revenue:0, burn:2133, reimb:740,
+    monthly:[{m:'Jan',v:338},{m:'Feb',v:420},{m:'Mar',v:5402},{m:'Apr',v:240}],
+    catSpend:[{l:'Raw Material',pct:71},{l:'Office',pct:12},{l:'Admin',pct:11},{l:'Software',pct:7}],
+    strategy:'Deep recovery without the energy crash. Premium Thai cacao powder · traceable origin · zero-waste · B2B primary.',
+    pillars:['Theobromine vs caffeine — smooth energy, no cortisol spike.','Natural bioavailable electrolytes + magnesium from real cacao.','Whole cacao fruit utilisation. Zero-waste sustainability narrative for B2B partners.'],
+    roadmap:[{q:'Q1 2026',done:true,items:'KNECTD deal·Tasting event·Brand MVP·Domain'},{q:'Q2 2026',now:true,items:'Pitch deck·Website launch·First B2B client·Funding'},{q:'Q3 2026',items:'Scale B2B·2nd client·Supply chain'},{q:'Q4 2026',items:'Retail partnership·Revenue milestone'}],
+  },
+  knectd: {
+    type:'Payments Infrastructure · B2B + B2C', location:'Bangkok, TH', started:'Mar 9, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Revenue: ฿35k/mo',c:'b-green'},{t:'Contract signed',c:'b-green'}],
+    signals:[
+      {c:'#639922',t:'Revenue generating — ฿35,000/mo',d:'Scope of work signed. KNECTD is the primary income source funding other projects in the workspace.'},
+      {c:'#639922',t:'Brand positioning established',d:'B2B messaging around payout cost reduction and gig economy payouts is defined and in execution.'},
+      {c:'#EF9F27',t:'Content engine scaling',d:'MarCom workstream active: personas, content pillars, and content bank being built out for Q2.'},
+      {c:'#378ADD',t:'Website messaging underway',d:'Site structure, UX content audit, and homepage (v7.0) copy in production.'},
+    ],
+    okrs:[{t:'Deliver scope of work month 1',s:'Done',sc:'p-g'},{t:'Build MarCom content engine',s:'In flight',sc:'p-y'},{t:'Website + channel setup live',s:'Q2',sc:'p-b'}],
+    spend:0, revenue:35000, burn:0, reimb:0,
+    monthly:[{m:'Jan',v:0},{m:'Feb',v:0},{m:'Mar',v:35000}],
+    catSpend:[{l:'Marketing',pct:60},{l:'Technology',pct:30},{l:'Operations',pct:10}],
+    strategy:'Payments infrastructure for platforms moving money faster. B2B: reduce payout costs and failures. B2C: gig workers receive payouts faster.',
+    pillars:['Outcome-first messaging — cost, speed, compliance before technology.','Stablecoins positioned as infrastructure, not product.','Dual audience: Heads of Payments (B2B) and gig workers (B2C).'],
+    roadmap:[{q:'Q1 2026',done:true,items:'Contract signed·Brand brief·Personas·Content pillars'},{q:'Q2 2026',now:true,items:'Website live·Ads creative·Content bank·Social channels'},{q:'Q3 2026',items:'Performance reporting·Campaign optimisation'},{q:'Q4 2026',items:'Expansion scope·Second workstream'}],
+  },
+  gomma: {
+    type:'Creative Studio · MarCom & Automation', location:'Bangkok, TH', started:'Mar 19, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Pre-Revenue',c:'b-purple'},{t:'Incubating',c:'b-yellow'}],
+    signals:[
+      {c:'#639922',t:'Studio concept defined',d:'GOMMA positions as a creative studio at the intersection of MarCom and AI automation for founders.'},
+      {c:'#EF9F27',t:'Early stage — no revenue yet',d:'Two sub-projects in motion but no client or product signed. First client target is Q2 2026.'},
+      {c:'#378ADD',t:'Marketplace sub-project scoped',d:'Premium Human AI Agentic Creator marketplace is the flagship product concept in development.'},
+    ],
+    okrs:[{t:'Studio identity defined',s:'Done',sc:'p-g'},{t:'Land first GOMMA client',s:'In flight',sc:'p-y'},{t:'Marketplace MVP scoped',s:'In flight',sc:'p-y'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Jan',v:0},{m:'Feb',v:0},{m:'Mar',v:0}],
+    catSpend:[{l:'Strategy',pct:70},{l:'Marketing',pct:25},{l:'Operations',pct:5}],
+    strategy:'Creative studio for founders. Specialises in MarCom strategy, AI-powered content automation, and a creator marketplace.',
+    pillars:['MarCom + automation as a combined service offering.','AI-augmented creators — human quality, machine speed.','Founders as the primary client — lean teams needing full-stack brand execution.'],
+    roadmap:[{q:'Q1 2026',done:true,items:'Studio setup·Sub-projects scoped·Positioning'},{q:'Q2 2026',now:true,items:'First client·Workshop delivery·Marketplace spec'},{q:'Q3 2026',items:'Marketplace build·2nd client'},{q:'Q4 2026',items:'Scale studio·Revenue model locked'}],
+  },
+  barcamp: {
+    type:'Community Event · Network Building', location:'Bangkok, TH', started:'Nov 29, 2025',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Community',c:'b-purple'},{t:'GOMMA reputation play',c:'b-yellow'}],
+    signals:[
+      {c:'#639922',t:'10 CRM contacts logged',d:'BarCamp is a network-building play. 10 contacts already in CRM — the highest for any non-revenue project.'},
+      {c:'#378ADD',t:'Linked to Q1 OKR',d:'Building GOMMA reputation through BarCamp was an explicit Q1 objective. In-flight as of Q2.'},
+      {c:'#EF9F27',t:'Low task count — may need more structure',d:'Only 1 task linked. Consider breaking the event into sub-tasks for tracking prep milestones.'},
+    ],
+    okrs:[{t:'Present at BarCamp event',s:'In flight',sc:'p-y'},{t:'Build GOMMA public profile',s:'In flight',sc:'p-y'},{t:'Expand network from event',s:'Planned',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Nov',v:0},{m:'Dec',v:0},{m:'Jan',v:0},{m:'Mar',v:0}],
+    catSpend:[{l:'Operations',pct:60},{l:'Marketing',pct:35},{l:'Admin',pct:5}],
+    strategy:'Community event participation as a reputation and network-building vehicle for GOMMA Studio. Low cost, high relationship ROI.',
+    pillars:['Public presence for the GOMMA brand among Bangkok tech founders.','Direct relationship building — 10 CRM contacts already seeded.','Feeds pipeline for GOMMA\'s first clients via warm introductions.'],
+    roadmap:[{q:'Q4 2025',done:true,items:'Project opened·Initial planning'},{q:'Q1 2026',done:true,items:'CRM contacts added·Event prep'},{q:'Q2 2026',now:true,items:'Event delivery·Follow-up outreach'},{q:'Q3 2026',items:'Network activation from leads'}],
+  },
+  mon: {
+    type:'Consumer Product · Nicotine / Wellness', location:'Bangkok, TH', started:'—',
+    badges:[{t:'Not Started',c:'b-gray'},{t:'Idea stage',c:'b-purple'},{t:'10 tasks scoped',c:'b-yellow'}],
+    signals:[
+      {c:'#888780',t:'Idea stage — not yet activated',d:'10 tasks have been scoped but no work has started. Queued behind PAUSA and KNECTD.'},
+      {c:'#EF9F27',t:'Persona and MarCom structure pre-built',d:'MON Persona, Content Pillar, and MarCom pages already exist. Setup overhead is low when ready to start.'},
+      {c:'#378ADD',t:'Linked to two quarterly cycles',d:'Project is tied to Q1 and Q2 2026 quarterly DBs — suggesting planned activation in this period.'},
+    ],
+    okrs:[{t:'Activate project and assign tasks',s:'Not started',sc:'p-gr'},{t:'Define product formulation',s:'Not started',sc:'p-gr'},{t:'Brand and persona defined',s:'Not started',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Q1',v:0},{m:'Q2',v:0},{m:'Q3',v:0}],
+    catSpend:[{l:'R&D',pct:55},{l:'Marketing',pct:33},{l:'Operations',pct:12}],
+    strategy:'Durian-flavoured nicotine pouch targeting Thai wellness and lifestyle consumers. Pre-built brand architecture awaiting activation.',
+    pillars:['Flavour differentiation — durian as a distinctive Thai identity angle.','Wellness framing — nicotine replacement or harm-reduction positioning.','Same brand playbook as PAUSA: persona-first, content-driven launch.'],
+    roadmap:[{q:'Q1–Q2 2026',items:'Queued — awaiting activation'},{q:'Q2–Q3 2026',now:true,items:'Activate·Product R&D·Brand setup'},{q:'Q3 2026',items:'Prototype·Supplier·Go-to-market'},{q:'Q4 2026',items:'Launch-ready product'}],
+  },
+  ai: {
+    type:'Internal Tool · Productivity Infrastructure', location:'Personal', started:'Mar 14, 2026',
+    badges:[{t:'In Progress',c:'b-blue'},{t:'Internal tool',c:'b-purple'},{t:'High priority',c:'b-red'}],
+    signals:[
+      {c:'#639922',t:'Core concept defined',d:'Notion as knowledge base, AI as analyst/prioritiser, n8n for automation triggers. Architecture scoped.'},
+      {c:'#EF9F27',t:'Voice and real execution not yet built',d:'Voice call and real task execution remain unchecked. These are the two unlock milestones.'},
+      {c:'#378ADD',t:'Multiple agent roles scoped',d:'CFO Lommi, CTO, and personal boundary agent define specialist agent functions.'},
+    ],
+    okrs:[{t:'Core assistant architecture live',s:'In flight',sc:'p-y'},{t:'Voice call capability',s:'Not started',sc:'p-gr'},{t:'Real task execution loop',s:'Not started',sc:'p-gr'}],
+    spend:0, revenue:0, burn:0, reimb:0,
+    monthly:[{m:'Mar',v:0},{m:'Apr',v:0}],
+    catSpend:[{l:'Technology',pct:75},{l:'Strategy',pct:22},{l:'Operations',pct:3}],
+    strategy:'Personal AI assistant using Notion as knowledge base, Claude/AI for analysis and prioritisation, n8n for automation triggers.',
+    pillars:['Notion = library and knowledge base (human-curated).','AI = analyst, summariser, and perception expander.','n8n = automation triggers connecting both layers.'],
+    roadmap:[{q:'Mar 2026',done:true,items:'Concept defined·Architecture scoped'},{q:'Apr 2026',now:true,items:'Build core assistant·n8n triggers·Agent roles'},{q:'Q3 2026',items:'Voice capability·Real execution loop'},{q:'Q4 2026',items:'Full agentic operation'}],
+  },
+};
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function saveToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+
+async function notionGet(path) {
+  var token = getToken();
+  var res = await fetch('https://gomma.reensrisuplee.workers.dev/v1/' + path, {
+    headers: { 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' }
+  });
+  if (!res.ok) throw new Error('Notion API error: ' + res.status);
+  return res.json();
+}
+
+async function fetchPageData(pageId) {
+  var data = await notionGet('pages/' + pageId);
+  return data;
+}
+
+function extractTaskCounts(tasks) {
+  var counts = { total: tasks.length, done: 0, inprog: 0, review: 0, backlog: 0 };
+  tasks.forEach(function(t) {
+    var s = (t.properties && t.properties.Status && t.properties.Status.status) ? t.properties.Status.status.name : '';
+    if (s === 'Completed' || s === 'Archived') counts.done++;
+    else if (s === 'In Progress') counts.inprog++;
+    else if (s === 'Review') counts.review++;
+    else counts.backlog++;
+  });
+  return counts;
+}
+
+async function fetchOKRData(pid) {
+  var proj = PROJECTS[pid];
+  var OKR_DB = 'f350aca8c9a74c27a135b8b3085fcd7e';
+  try {
+    var cleanId = proj.notionId.replace(/-/g, '');
+    var res = await fetch('https://gomma.reensrisuplee.workers.dev/v1/databases/' + OKR_DB + '/query', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
+      body: JSON.stringify({
+        filter: { property: 'Project', relation: { contains: cleanId } },
+        sorts: [{ property: 'Quarter', direction: 'ascending' }],
+        page_size: 20
+      })
+    });
+    var data = await res.json();
+    if (!data.results || data.results.length === 0) return [];
+
+    var okrs = [];
+    data.results.forEach(function(page) {
+      var props = page.properties || {};
+      var text = props.OKR && props.OKR.title ? props.OKR.title.map(function(r){ return r.plain_text; }).join('') : '';
+      var quarter = props.Quarter && props.Quarter.select ? props.Quarter.select.name : '';
+      var status = props.Status && props.Status.select ? props.Status.select.name : 'Not Started';
+      if (text) okrs.push({ text: text, quarter: quarter, status: status });
+    });
+
+    var grouped = {};
+    okrs.forEach(function(o) {
+      if (!grouped[o.quarter]) grouped[o.quarter] = [];
+      grouped[o.quarter].push(o);
+    });
+
+    return Object.keys(grouped).sort().map(function(q) {
+      return { quarter: q, goals: grouped[q] };
+    });
+  } catch(e) {
+    console.error('OKR fetch error:', e);
+    return [];
+  }
+}
+
+async function fetchFinanceData(pid) {
+  var proj = PROJECTS[pid];
+  var FINANCE_DB = '2fc7286d055f812d85b6fc8a4ca87d4d';
+  try {
+    var spend = 0, revenue = 0, investment = 0, loan = 0, reimb = 0;
+    var monthly = {};
+    var txnList = [];
+    var hasMore = true;
+    var cursor = null;
+
+    while (hasMore) {
+      var cleanId = proj.notionId.replace(/-/g, '');
+      var body = {
+        filter: {
+          property: 'Master Project Dashboard',
+          relation: { contains: cleanId }
+        },
+        page_size: 50
+      };
+      if (cursor) body.start_cursor = cursor;
+
+      var res = await fetch('https://gomma.reensrisuplee.workers.dev/v1/databases/' + FINANCE_DB + '/query', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + getToken(),
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(body)
+      });
+      var data = await res.json();
+      if (!data.results) break;
+
+      data.results.forEach(function(t) {
+        var p = t.properties || {};
+        var amount = p.Amount && p.Amount.number ? p.Amount.number : 0;
+        var type = p.Type && p.Type.select ? p.Type.select.name : '';
+        var status = p.Status && p.Status.status ? p.Status.status.name : '';
+        var name = p.Transaction && p.Transaction.title ? p.Transaction.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
+        var dateVal = (p['Date'] && p['Date'].date ? p['Date'].date.start : '');
+        var cat = p.Category && p.Category.select ? p.Category.select.name : '';
+
+        if (type === 'Expense') spend += amount;
+        else if (type === 'Revenue') revenue += amount;
+        else if (type === 'Investment') investment += amount;
+        else if (type === 'Loan') loan += amount;
+        if (status === 'Awaiting Reimbursement') reimb += amount;
+
+        if (dateVal) {
+          var month = dateVal.substring(0,7);
+          if (!monthly[month]) monthly[month] = {expense:0, revenue:0};
+          if (type === 'Expense') monthly[month].expense += amount;
+          else if (type === 'Revenue') monthly[month].revenue += amount;
+        }
+
+        txnList.push({ n: name, amount: amount, type: type, status: status, cat: cat, date: dateVal });
+      });
+
+      hasMore = data.has_more;
+      cursor = data.next_cursor;
+    }
+
+    txnList.sort(function(a,b){ return b.date > a.date ? 1 : -1; });
+    return { spend: spend, revenue: revenue, investment: investment, loan: loan, reimb: reimb, txns: txnList, monthly: monthly };
+  } catch(e) {
+    console.error('Finance fetch error:', e);
+    return { spend:0, revenue:0, investment:0, loan:0, reimb:0, txns:[], monthly:{} };
+  }
+}
+
+async function fetchProjectLiveData(pid) {
+  var proj = PROJECTS[pid];
+  var TASKS_DB = '2fc7286d055f816abd4fe98440f1ed86';
+  try {
+    var page = await notionGet('pages/' + proj.notionId);
+    var props = page.properties || {};
+    var docCount = (props['Document Hub'] && props['Document Hub'].relation) ? props['Document Hub'].relation.length : 0;
+    var crmCount = (props['Master CRM'] && props['Master CRM'].relation) ? props['Master CRM'].relation.length : 0;
+
+    var cleanId = proj.notionId.replace(/-/g, '');
+    var tasks = [];
+    var hasMore = true;
+    var cursor = null;
+    while (hasMore) {
+      var body = {
+        filter: { property: 'Parent Project', relation: { contains: cleanId } },
+        page_size: 100
+      };
+      if (cursor) body.start_cursor = cursor;
+      var res = await fetch('https://gomma.reensrisuplee.workers.dev/v1/databases/' + TASKS_DB + '/query', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
+        body: JSON.stringify(body)
+      });
+      var data = await res.json();
+      if (!data.results) break;
+      tasks = tasks.concat(data.results);
+      hasMore = data.has_more;
+      cursor = data.next_cursor;
+    }
+
+    var taskCounts = extractTaskCounts(tasks);
+
+    var activeTasks = tasks.filter(function(t) {
+      var s = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
+      return s === 'In Progress' || s === 'Review';
+    }).slice(0, 8).map(function(t) {
+      var name = t.properties && t.properties.Task && t.properties.Task.title ? t.properties.Task.title.map(function(r){ return r.plain_text; }).join('') : 'Untitled';
+      var status = t.properties && t.properties.Status && t.properties.Status.status ? t.properties.Status.status.name : '';
+      var due = t.properties && t.properties['Due Date'] && t.properties['Due Date'].date ? t.properties['Due Date'].date.start : '—';
+      return { n: name, s: status, sc: status === 'In Progress' ? 'p-b' : 'p-y', due: due };
+    });
+
+    var finance = await fetchFinanceData(pid);
+    var okrs = await fetchOKRData(pid);
+
+    liveData[pid] = { taskCounts: taskCounts, activeTasks: activeTasks, docs: docCount, crm: crmCount, finance: finance, okrs: okrs, lastRefresh: new Date() };
+  } catch(e) {
+    console.error('Error fetching live data:', e);
+    liveData[pid] = null;
+  }
+}
+
+function pill(text, cls) { return '<span class="pill ' + cls + '">' + text + '</span>'; }
+
+function renderDashboard(pid) {
+  var p = PROJECTS[pid];
+  var s = STATIC[pid];
+  var live = liveData[pid];
+
+  var taskCounts = live ? live.taskCounts : { total: '—', done: '—', inprog: '—', review: '—', backlog: '—' };
+  var pctDone = (live && live.taskCounts.total > 0) ? Math.round(live.taskCounts.done / live.taskCounts.total * 100) : 0;
+  var activeTasks = live ? live.activeTasks : [];
+  var docs = live ? live.docs : '—';
+  var crm = live ? live.crm : '—';
+  var lastRefresh = live ? live.lastRefresh.toLocaleTimeString() : 'not loaded';
+
+  var html = '';
+  html += '<div class="header">';
+  html += '<div><div class="eyebrow">' + p.id + ' · Business Intelligence</div>';
+  html += '<div class="proj-title">' + p.name + '</div>';
+  html += '<div class="proj-meta">' + s.type + ' · ' + s.location + (s.started !== '—' ? ' · Started ' + s.started : '') + '</div>';
+  html += '<div class="badges">';
+  s.badges.forEach(function(b){ html += '<span class="badge ' + b.c + '">' + b.t + '</span>'; });
+  html += '</div></div>';
+  html += '<div class="header-right"><div>' + (typeof taskCounts.total === 'number' ? taskCounts.total : '—') + ' tasks</div><div>' + docs + ' documents</div>' + (crm > 0 ? '<div>' + crm + ' CRM contacts</div>' : '') + '<div style="color:var(--text3)">Refreshed ' + lastRefresh + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="tabs">';
+  [{k:'exec',l:'Executive'},{k:'finance',l:'Finance'},{k:'ops',l:'Operations'},{k:'strategy',l:'Strategy'}].forEach(function(t){
+    html += '<div class="tab' + (activeTab===t.k?' active':'') + '" onclick="switchTab(\'' + t.k + '\')">' + t.l + '</div>';
+  });
+  html += '</div>';
+
+  html += '<div id="panel-exec" class="panel' + (activeTab==='exec'?' active':'') + '">';
+  html += '<div class="sl">Health snapshot</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Total tasks</div><div class="mv">' + (taskCounts.total||'—') + '</div><div class="ms">across all workstreams</div></div>';
+  html += '<div class="mc"><div class="ml">Completion rate</div><div class="mv" style="color:#3B6D11">' + pctDone + '%</div><div class="ms">' + (taskCounts.done||0) + ' of ' + (taskCounts.total||'—') + ' done</div></div>';
+  html += '<div class="mc"><div class="ml">In progress</div><div class="mv" style="color:#185FA5">' + (taskCounts.inprog||0) + '</div><div class="ms">active workstreams</div></div>';
+  html += '<div class="mc"><div class="ml">Documents</div><div class="mv">' + docs + '</div><div class="ms">in document hub</div></div>';
+  html += '</div>';
+
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Business signals</div>';
+  s.signals.forEach(function(sig){
+    html += '<div class="signal-row"><div class="sdot" style="background:' + sig.c + '"></div><div><div class="st">' + sig.t + '</div><div class="ss">' + sig.d + '</div></div></div>';
+  });
+  html += '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:10px">';
+  html += '<div class="card" style="margin-bottom:0"><div class="ct">OKRs</div>';
+  s.okrs.forEach(function(o){ html += '<div class="row"><div class="rn">' + o.t + '</div>' + pill(o.s, o.sc) + '</div>'; });
+  html += '</div></div></div></div>';
+
+  var lf = (live && live.finance) ? live.finance : null;
+  var fSpend = lf ? Math.round(lf.spend) : 0;
+  var fRev = lf ? Math.round(lf.revenue) : 0;
+  var fReim = lf ? Math.round(lf.reimb) : 0;
+  var fTxns = lf ? lf.txns : [];
+  var fMonthly = lf ? lf.monthly : {};
+  var fLoaded = lf !== null;
+  var netPL = fRev - fSpend;
+
+  html += '<div id="panel-finance" class="panel' + (activeTab==='finance'?' active':'') + '">';
+  html += '<div class="sl">Financial performance</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Total expenses</div><div class="mv" style="color:' + (fSpend>0?'#A32D2D':'var(--text3)') + '">฿' + fSpend.toLocaleString() + '</div><div class="ms">' + fTxns.length + ' transactions</div></div>';
+  html += '<div class="mc"><div class="ml">Revenue</div><div class="mv" style="color:' + (fRev>0?'#3B6D11':'var(--text3)') + '">฿' + fRev.toLocaleString() + '</div><div class="ms">' + (fRev>0?'total logged':'pre-revenue') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Net P&L</div><div class="mv" style="color:' + (netPL>=0?'#3B6D11':'#A32D2D') + '">' + (netPL>=0?'+':'') + '฿' + Math.abs(netPL).toLocaleString() + '</div><div class="ms">' + (netPL>=0?'surplus':'deficit') + '</div></div>';
+  html += '<div class="mc"><div class="ml">Awaiting reimb.</div><div class="mv" style="color:' + (fReim>0?'#854F0B':'var(--text3)') + '">฿' + fReim.toLocaleString() + '</div><div class="ms">' + (fReim>0?'pending':'none') + '</div></div>';
+  html += '</div>';
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Transaction ledger</div>';
+  if (fTxns.length > 0) {
+    fTxns.slice(0,8).forEach(function(t) {
+      var amtColor = t.type==='Revenue' ? '#3B6D11' : '#A32D2D';
+      var amtPrefix = t.type==='Revenue' ? '+' : '−';
+      var sc = t.status==='Completed'?'p-g':t.status==='Awaiting Reimbursement'?'p-y':t.status==='Pending'?'p-gr':'p-b';
+      html += '<div class="row"><div class="rn">' + t.n + '<span style="font-size:11px;color:var(--text3);margin-left:6px;">' + (t.cat||t.type) + '</span></div><span class="pill '+sc+'">'+t.status+'</span><div style="font-size:12px;font-weight:500;color:'+amtColor+';">'+amtPrefix+'฿'+Math.round(t.amount).toLocaleString()+'</div></div>';
+    });
+    if (fTxns.length > 8) html += '<div style="font-size:11px;color:var(--text3);padding:8px 0">+ ' + (fTxns.length-8) + ' more transactions</div>';
+  } else {
+    html += '<div style="color:var(--text3);font-size:12px;padding:8px 0">' + (fLoaded ? 'No transactions linked to this project.' : 'Click Refresh to load finance data.') + '</div>';
+  }
+  html += '</div>';
+  html += '<div class="card"><div class="ct">Monthly cash flow</div><div class="cw-md"><canvas id="burnChart"></canvas></div></div>';
+  html += '</div></div>';
+
+  html += '<div id="panel-ops" class="panel' + (activeTab==='ops'?' active':'') + '">';
+  html += '<div class="sl">Task performance</div>';
+  html += '<div class="mg">';
+  html += '<div class="mc"><div class="ml">Completed</div><div class="mv" style="color:#3B6D11">' + (taskCounts.done||0) + '</div><div class="ms">' + pctDone + '% of total</div></div>';
+  html += '<div class="mc"><div class="ml">In progress</div><div class="mv" style="color:#185FA5">' + (taskCounts.inprog||0) + '</div><div class="ms">active now</div></div>';
+  html += '<div class="mc"><div class="ml">Under review</div><div class="mv" style="color:#854F0B">' + (taskCounts.review||0) + '</div><div class="ms">awaiting sign-off</div></div>';
+  html += '<div class="mc"><div class="ml">Backlog</div><div class="mv" style="color:#534AB7">' + (taskCounts.backlog||0) + '</div><div class="ms">not started</div></div>';
+  html += '</div>';
+  html += '<div class="two">';
+  html += '<div class="card"><div class="ct">Active workstreams</div>';
+  if (activeTasks.length > 0) {
+    activeTasks.forEach(function(t){ html += '<div class="row"><div class="rn">' + t.n + '</div>' + pill(t.s, t.sc) + '<div style="font-size:11px;color:var(--text3)">' + t.due + '</div></div>'; });
+  } else {
+    html += '<div style="color:var(--text3);font-size:12px;padding:8px 0">No active tasks — click Refresh to load live data.</div>';
+  }
+  html += '</div>';
+  html += '<div class="card"><div class="ct">Status breakdown</div><div class="cw"><canvas id="taskChart"></canvas></div></div>';
+  html += '</div></div>';
+
+  html += '<div id="panel-strategy" class="panel' + (activeTab==='strategy'?' active':'') + '">';
+  html += '<div class="sl">Positioning</div>';
+  html += '<div class="card"><div class="ct">Value proposition</div>';
+  html += '<div style="border-left:3px solid #378ADD;padding-left:14px;margin-bottom:14px;font-size:14px;font-weight:500;line-height:1.6">' + s.strategy + '</div>';
+  html += '<div class="mg3">';
+  s.pillars.forEach(function(pl, i){ html += '<div class="ic"><div class="it">Pillar ' + (i+1) + '</div><div class="ib">' + pl + '</div></div>'; });
+  html += '</div></div>';
+  html += '<div class="sl">Quarterly roadmap</div><div class="card"><div class="qgrid">';
+  s.roadmap.forEach(function(r){
+    var col = r.now ? '#854F0B' : (r.done ? '#185FA5' : 'var(--text3)');
+    html += '<div class="qcol"><div class="ql" style="color:' + col + '">' + (r.done?'✓ ':'') + r.q + '</div><div class="qi">' + r.items.split('·').join('<br>') + '</div></div>';
+  });
+  html += '</div></div></div>';
+
+  document.getElementById('dashboard-area').innerHTML = html;
+  buildCharts(pid);
+}
+
+function buildCharts(pid) {
+  var s = STATIC[pid];
+  var live = liveData[pid];
+  Object.values(charts).forEach(function(c){ try{ c.destroy(); }catch(e){} });
+  charts = {};
+
+  var bc = document.getElementById('burnChart');
+  if (bc) {
+    charts.burn = new Chart(bc, {
+      type: 'bar',
+      data: {
+        labels: s.monthly.map(function(m){ return m.m; }),
+        datasets: [{ data: s.monthly.map(function(m){ return m.v; }), backgroundColor: s.revenue > 0 ? '#639922' : '#E24B4A', borderRadius: 4, borderWidth: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' ฿'+c.parsed.y.toLocaleString();}}}}, scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:11},callback:function(v){return '฿'+v.toLocaleString();}}}}}
+    });
+  }
+
+  var tc = document.getElementById('taskChart');
+  if (tc) {
+    var t = live ? live.taskCounts : { done:0, inprog:0, review:0, backlog:0 };
+    charts.task = new Chart(tc, {
+      type: 'doughnut',
+      data: { datasets:[{ data:[t.done,t.inprog,t.review,t.backlog], backgroundColor:['#639922','#378ADD','#EF9F27','#7F77DD'], borderWidth:0, hoverOffset:3 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){ return [' Done',' In Progress',' Review',' Backlog'][c.dataIndex]+': '+c.parsed; }}}}}
+    });
+  }
+}
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  event.target.classList.add('active');
+  var panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+  setTimeout(function(){ buildCharts(activeProject); }, 50);
+}
+
+function loadProject(pid) {
+  activeProject = pid;
+  document.querySelectorAll('.project-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelector('[data-pid="' + pid + '"]').classList.add('active');
+  renderDashboard(pid);
+}
+
+async function refreshCurrent() {
+  var btn = document.getElementById('refresh-btn');
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').textContent = 'Refreshing...';
+  try {
+    await fetchProjectLiveData(activeProject);
+    renderDashboard(activeProject);
+    setStatus('Last refreshed: ' + new Date().toLocaleTimeString());
+  } catch(e) {
+    setStatus('Error refreshing — check your Notion token.');
+  }
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Refresh';
+}
+
+function setStatus(msg) {
+  var el = document.getElementById('status-bar');
+  if (el) el.textContent = msg;
+}
+
+function renderTokenForm(errorMsg) {
+  document.body.classList.add('auth');
+  var html = '<div class="token-form">';
+  html += '<h2>Login</h2>';
+  if (errorMsg) html += '<div class="error-msg">' + errorMsg + '</div>';
+  html += '<input class="token-input" id="token-input" type="password" aria-label="Login" autocomplete="off" onkeydown="if(event.key===\'Enter\')submitToken()" />';
+  html += '<button class="save-btn" onclick="submitToken()">Login</button>';
+  html += '</div>';
+  document.getElementById('root').innerHTML = html;
+}
+
+function submitToken() {
+  var val = document.getElementById('token-input').value.trim();
+  if (!val || (!val.startsWith('secret_') && !val.startsWith('ntn_'))) {
+    renderTokenForm('Login failed. Please try again.');
+    return;
+  }
+  saveToken(val);
+  init();
+}
+
+function renderShell() {
+  document.body.classList.remove('auth');
+  var html = '<div class="topbar">';
+  html += '<div class="topbar-left">';
+  html += '<div id="logo-placeholder" style="display:flex;align-items:center;gap:10px;"></div>';
+  html += '<div class="project-bar">';
+  Object.keys(PROJECTS).forEach(function(pid){
+    html += '<button class="project-btn' + (pid===activeProject?' active':'') + '" data-pid="' + pid + '" onclick="loadProject(\'' + pid + '\')">' + PROJECTS[pid].name + '</button>';
+  });
+  html += '</div></div>';
+  html += '<button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()"><div class="spinner"></div><span class="btn-label">Refresh</span></button>';
+  html += '</div>';
+  html += '<div class="status-bar" id="status-bar">Click Refresh to load live data from Notion.</div>';
+  html += '<div id="dashboard-area"></div>';
+  document.getElementById('root').innerHTML = html;
+  renderDashboard(activeProject);
+}
+
+async function init() {
+  var token = getToken();
+  if (!token) { renderTokenForm(); return; }
+
+  document.body.classList.add('auth');
+  document.getElementById('root').innerHTML = '<div class="loading-screen"><div class="big-spinner"></div><p>Loading...</p></div>';
+
+  try {
+    await notionGet('users/me');
+  } catch(e) {
+    localStorage.removeItem(TOKEN_KEY);
+    renderTokenForm('Login failed. Please try again.');
+    return;
+  }
+
+  renderShell();
+}
+
+init();
+</script>
+<div id="static-logo" style="display:none;">
+<svg width="80" height="12" viewBox="0 0 106 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="gomma-logo" aria-label="GOMMA"><path d="M16.5688 9.00771C16.5548 9.96744 16.3661 10.8723 16.0025 11.7224C15.639 12.5587 15.1217 13.2991 14.4505 13.9434C13.7794 14.5878 12.9614 15.0951 11.9967 15.4653C11.0459 15.8218 9.95528 16 8.72485 16C7.48044 16 6.32691 15.8149 5.26427 15.4447C4.20163 15.0746 3.27182 14.5467 2.47484 13.8612C1.69184 13.162 1.08362 12.3188 0.650169 11.3316C0.216723 10.3445 0 9.23393 0 8C0 6.76607 0.216723 5.65553 0.650169 4.66838C1.0976 3.68123 1.7198 2.8449 2.51678 2.15938C3.31377 1.46015 4.25057 0.92545 5.32719 0.55527C6.40382 0.18509 7.58531 0 8.87166 0C10.4796 0 11.8848 0.260497 13.0873 0.781492C14.3037 1.28878 15.2825 1.988 16.0235 2.87918C16.7646 3.77035 17.219 4.79177 17.3868 5.94345H14.5764C14.4226 5.2168 14.087 4.58612 13.5697 4.05141C13.0663 3.51671 12.4161 3.1054 11.6192 2.81748C10.8222 2.52956 9.89935 2.38561 8.85069 2.38561C7.62026 2.38561 6.55063 2.61183 5.64179 3.06427C4.74693 3.503 4.04783 4.14053 3.54447 4.97686C3.0551 5.8132 2.81041 6.82091 2.81041 8C2.81041 9.17909 3.06209 10.1937 3.56544 11.0437C4.08278 11.8937 4.80985 12.545 5.74666 12.9974C6.68346 13.4499 7.78805 13.6761 9.06042 13.6761C10.2908 13.6761 11.3675 13.4704 12.2903 13.0591C13.2131 12.6478 13.9402 12.0788 14.4715 11.3522C15.0028 10.6118 15.2895 9.75493 15.3314 8.78149L16.5688 9.00771ZM9.60572 10.1799V8.12339H17.5546V15.7121H15.4992L15.1636 9.3162L15.8138 10.1799H9.60572Z" fill="currentColor"/><path d="M34.4231 0H37.2125L22.8249 16H20.0355L34.4231 0ZM28.6135 16C26.8238 16 25.2508 15.6641 23.8945 14.9923C22.5522 14.3205 21.5036 13.3882 20.7486 12.1954C19.9935 10.9889 19.616 9.5904 19.616 8C19.616 6.4096 19.9935 5.018 20.7486 3.82519C21.5036 2.61868 22.5522 1.67952 23.8945 1.00771C25.2508 0.335904 26.8238 0 28.6135 0C29.8999 0 31.0883 0.191945 32.1789 0.575835C33.2835 0.959727 34.2413 1.50814 35.0523 2.22108C35.8632 2.92031 36.4924 3.7635 36.9399 4.75064C37.4013 5.72408 37.632 6.8072 37.632 8C37.632 9.5904 37.2545 10.9889 36.4994 12.1954C35.7444 13.3882 34.6887 14.3205 33.3325 14.9923C31.9762 15.6641 30.4032 16 28.6135 16ZM28.6135 13.5733C29.8859 13.5733 30.9835 13.347 31.9063 12.8946C32.8291 12.4422 33.5422 11.7978 34.0456 10.9614C34.5629 10.1251 34.8216 9.13796 34.8216 8C34.8216 6.86204 34.5629 5.87489 34.0456 5.03856C33.5422 4.20223 32.8291 3.55784 31.9063 3.1054C30.9835 2.65296 29.8859 2.42674 28.6135 2.42674C27.3551 2.42674 26.2575 2.65296 25.3207 3.1054C24.3979 3.55784 23.6848 4.20223 23.1814 5.03856C22.6781 5.87489 22.4264 6.86204 22.4264 8C22.4264 9.13796 22.6781 10.1251 23.1814 10.9614C23.6848 11.7978 24.3979 12.4422 25.3207 12.8946C26.2575 13.347 27.3551 13.5733 28.6135 13.5733Z" fill="currentColor"/><path d="M61.2743 0.287918V15.7121H58.6317V1.11054L59.4916 1.15167L52.172 15.7121H49.2147L41.8951 1.17224L42.755 1.13111V15.7121H40.1124V0.287918H44.349L51.396 14.5398H50.0117L57.0377 0.287918H61.2743Z" fill="currentColor"/><path d="M85.745 0.287918V15.7121H83.1023V1.11054L83.9622 1.15167L76.6426 15.7121H73.6854L66.3657 1.17224L67.2256 1.13111V15.7121H64.583V0.287918H68.8196L75.8666 14.5398H74.4824L81.5084 0.287918H85.745Z" fill="currentColor"/><path d="M91.151 12.1748V9.93316H102.141V12.1748H91.151ZM98.4497 0.287918L106 15.7121H103.043L96.1845 1.3162H97.2542L90.396 15.7121H87.4387L94.9891 0.287918H98.4497Z" fill="currentColor"/></svg>
+</div>
+
+<script>
+(function() {
+  var orig = window.renderShell;
+  // After renderShell runs, inject the logo
+  setTimeout(function() {
+    var slot = document.getElementById('logo-placeholder');
+    var template = document.getElementById('static-logo');
+    if (slot && template) {
+      slot.innerHTML = template.innerHTML + '<span style="font-size:13px;font-weight:500;color:var(--text2);margin-left:8px;">BI Dashboard</span>';
+      slot.style.display = 'flex';
+      slot.style.alignItems = 'center';
+    }
+  }, 0);
+})();
+</script>
+</body>
+</html>

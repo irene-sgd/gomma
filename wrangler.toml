@@ -1,0 +1,50 @@
+name = "gomma"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "./dashboard-dist"
+run_worker_first = ["/v1/*", "/api/*"]
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "FINANCE_DB"
+database_name = "gomma-finance"
+database_id = "9c767de6-6f3e-46ec-9cc0-fba7da211d5a"
+
+[[ratelimits]]
+name = "INTAKE_LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "ESTIMATE_LIMITER"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 3
+  period = 60
+
+# Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY,
+# GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_SHEETS_SPREADSHEET_ID,
+# GOOGLE_FORECAST_SPREADSHEET_ID (GØMMA Studio Financial Model, Forecast tab),
+# FINANCE_ALLOWED_EMAIL (the one Google email allowed to read /api/finance)
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "autumn-queen-432d.cloudflareaccess.com"
+CF_ACCESS_AUD = "c116b0199868acbd62d7379c83859a6d9393ae54960ea86c570e691a088e9ab4"
+ALLOWED_ORIGIN = "https://gomma.cc"
+INTAKE_ENABLED = "true"
+AUTO_SCREEN = "false"
+ESTIMATE_ENABLED = "true"
+ESTIMATE_MODEL = "claude-haiku-5-5"
+AGENT_ID = "agent_01QfxayFLEQDwMpqcirJC1xA"
+AGENT_VERSION = "1"
+ENVIRONMENT_ID = "env_01Q1SdyBDmHFEZJ9SqaTS9Y5"
+INBOX_DATA_SOURCE_ID = "798107ff-92d5-4e6c-878a-af8373606cab"
+CRM_DATA_SOURCE_ID = "3097286d-055f-8027-821c-000b6bbfb421"
+PROJECT_PAGE_ID = "3287286d-055f-80c0-9ca4-f9c214de534c"
+AREA_PAGE_ID = "31d7286d-055f-80ad-8253-fb00a192c8ef"
+SESSION_BUDGET_CENTS = "300"
+DAILY_AUTO_SCREEN_CAP = "25"
+SCREENING_TIMEOUT_MIN = "15"
