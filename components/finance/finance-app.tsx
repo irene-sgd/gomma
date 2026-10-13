@@ -34,7 +34,7 @@ const netFlow = (months: FinanceMonth[], key: "actual" | "forecast") =>
   sum(months, "Operating costs", key) -
   sum(months, "Tax reserve", key) -
   sum(months, "Owner salary", key) -
-  sum(months, "Norway transfer", key)
+  sum(months, "Owner transfers", key)
 
 export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
@@ -72,7 +72,7 @@ export function FinanceView() {
 
   const elapsed = data.months.filter((m) => m.status !== "future")
   const latest = elapsed.at(-1)
-  const cash = line(latest, "Closing Reserve cash")
+  const cash = line(latest, "Closing cash")
   const burn =
     (line(latest, "Operating costs")?.forecast ?? 0) +
     (line(latest, "Owner salary")?.forecast ?? 0)
@@ -88,8 +88,8 @@ export function FinanceView() {
   }))
   const cashSeries = data.months.map((m) => ({
     month: monthName(m.month),
-    actual: m.status === "future" ? null : (line(m, "Closing Reserve cash")?.actual ?? null),
-    forecast: line(m, "Closing Reserve cash")?.forecast ?? 0,
+    actual: m.status === "future" ? null : (line(m, "Closing cash")?.actual ?? null),
+    forecast: line(m, "Closing cash")?.forecast ?? 0,
   }))
 
   return (
@@ -141,7 +141,7 @@ export function FinanceView() {
                 {elapsed.map((m) => {
                   const rev = line(m, "Revenue")
                   const cost = line(m, "Operating costs")
-                  const c = line(m, "Closing Reserve cash")
+                  const c = line(m, "Closing cash")
                   return (
                     <TableRow
                       key={m.month}
@@ -301,7 +301,7 @@ function ReviewWidget({ months }: { months: FinanceMonth[] }) {
   const off = month.lines
     .filter((l) => l.off)
     .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference))
-  const key = ["Revenue", "Operating costs", "Closing Reserve cash"]
+  const key = ["Revenue", "Operating costs", "Closing cash"]
     .map((name) => line(month, name))
     .filter((l): l is NonNullable<typeof l> => Boolean(l))
 
