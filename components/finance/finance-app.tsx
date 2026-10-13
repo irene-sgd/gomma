@@ -23,6 +23,7 @@ import {
   monthName,
   signedMoney,
   type FinanceData,
+  type FinanceMonth,
 } from "@/lib/finance"
 import { cn } from "cn"
 
@@ -77,6 +78,7 @@ export function FinanceView() {
   return (
     <Shell>
       <div className="flex flex-col gap-2">
+        <ReviewWidget month={month} />
         <div className="flex gap-2 overflow-x-auto pb-1" role="tablist">
           {data.months.map((m) => (
             <Button
@@ -211,6 +213,78 @@ export function FinanceView() {
         </Card>
       </div>
     </Shell>
+  )
+}
+
+function ReviewWidget({ month }: { month: FinanceMonth }) {
+  const total = month.lines.length
+  const off = month.lines
+    .filter((l) => l.off)
+    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference))
+  const share = total ? (month.onTrack / total) * 100 : 0
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <SectionLabel>Monthly actuals vs forecast review</SectionLabel>
+        <div className="flex items-center gap-2">
+          {month.status === "current" && <Badge>Partial</Badge>}
+          {month.status === "future" && <Badge>Forecast</Badge>}
+          <Badge variant={month.off === 0 ? "success" : "danger"}>
+            {month.off === 0 ? "On track" : `${month.off} off`}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">{monthName(month.month)}</p>
+            <p className="text-3xl font-bold">
+              {month.onTrack} / {total}
+            </p>
+          </div>
+          <div
+            className="h-2 w-full overflow-hidden rounded-full bg-tinted"
+            role="img"
+            aria-label={`${month.onTrack} of ${total} lines on track`}
+          >
+            <div className="h-full bg-success" style={{ width: `${share}%` }} />
+          </div>
+        </div>
+        {off.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Off forecast</TableHead>
+                <TableHead className="text-right">Actual</TableHead>
+                <TableHead className="text-right">Forecast</TableHead>
+                <TableHead className="text-right">Difference</TableHead>
+                <TableHead className="text-right">%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {off.map((l) => (
+                <TableRow key={l.line}>
+                  <TableCell className="font-bold">{l.line}</TableCell>
+                  <TableCell className="text-right">{money(l.actual)}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {money(l.forecast)}
+                  </TableCell>
+                  <TableCell className="text-right">{signedMoney(l.difference)}</TableCell>
+                  <TableCell className="text-right">
+                    {l.forecast === 0
+                      ? "—"
+                      : `${l.difference < 0 ? "−" : "+"}${Math.round((Math.abs(l.difference) / Math.abs(l.forecast)) * 100)}%`}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="flex items-center text-success">All lines within 10%</div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
