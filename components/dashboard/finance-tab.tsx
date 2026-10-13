@@ -115,7 +115,7 @@ export function FinanceTab({
                         <TableRow key={`${t.date}-${t.name}-${i}`}>
                           <TableCell className="max-w-56 truncate">
                             {t.name}
-                            <span className="ml-2 text-xs text-muted-foreground">
+                            <span className="ml-2 text-xs text-ink-soft">
                               {t.category || t.type}
                             </span>
                           </TableCell>
@@ -139,7 +139,7 @@ export function FinanceTab({
                   </TableBody>
                 </Table>
                 {txns.length > 8 && (
-                  <p className="px-3 pt-3 text-xs text-muted-foreground">
+                  <p className="px-3 pt-3 text-xs text-ink-soft">
                     + {txns.length - 8} more transactions
                   </p>
                 )}

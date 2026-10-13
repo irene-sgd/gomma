@@ -3,25 +3,34 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full font-bold whitespace-nowrap transition-[transform,background-color,color,box-shadow] duration-[33ms] outline-none select-none hover:scale-[1.04] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-100 active:opacity-70 disabled:pointer-events-none disabled:opacity-50 motion-reduce:hover:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-bold whitespace-nowrap transition-[transform,background-color,color,box-shadow] duration-100 outline-none select-none hover:scale-[1.04] focus-visible:ring-3 focus-visible:ring-foreground active:scale-100 active:opacity-70 disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground",
-        accent: "bg-success text-success-foreground",
+        // The CTA on any surface and ink pair: ink fill, surface-colored label.
+        default: "bg-(--ink) text-(--surface)",
+        // Outline marks an optional, secondary action: the only bordered control.
         outline:
-          "bg-transparent text-foreground shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--foreground)]",
-        secondary: "bg-secondary text-foreground hover:bg-accent",
+          "border-border-essential bg-transparent text-(--ink) hover:border-(--ink) aria-expanded:border-(--ink)",
+        // Fill steps up the neutral pairs: raised, then press.
+        secondary:
+          "bg-(--pair-raised-surface) text-(--pair-raised-ink) hover:scale-100 hover:bg-(--pair-press-surface) aria-expanded:bg-(--pair-press-surface)",
         ghost:
-          "bg-transparent text-muted-foreground hover:scale-100 hover:bg-secondary hover:text-foreground",
-        link: "bg-transparent px-0 text-muted-foreground hover:scale-100 hover:text-foreground",
+          "text-(--ink-soft) hover:scale-100 hover:bg-(--pair-raised-surface) hover:text-(--pair-raised-ink) aria-expanded:bg-(--pair-raised-surface) aria-expanded:text-(--pair-raised-ink) aria-current:bg-(--pair-raised-surface) aria-current:text-(--pair-raised-ink)",
+        destructive:
+          "bg-(--pair-danger-surface) text-(--pair-danger-ink) hover:bg-(--pair-danger-surface)/80",
+        link: "text-link underline-offset-4 hover:scale-100 hover:underline",
       },
       size: {
         default:
-          "h-8 gap-2 px-4 text-sm has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        lg: "h-12 gap-2 px-8 text-base",
-        icon: "size-8",
-        "icon-lg": "size-12 [&_svg:not([class*='size-'])]:size-6",
+          "h-10 gap-2 px-6 has-data-[icon=inline-end]:pr-5 has-data-[icon=inline-start]:pl-5",
+        xs: "h-6 gap-1 px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-12 gap-2 px-8",
+        icon: "size-10",
+        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-12",
       },
     },
     defaultVariants: {

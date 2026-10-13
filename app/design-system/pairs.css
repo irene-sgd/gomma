@@ -1,0 +1,66 @@
+/* spotify-developed-gomma: surface and ink pairs
+   Every surface is a pair: --surface, --ink, --ink-soft. Components never set
+   their own text or fill color; they read the pair. Apply with data-pair. */
+:root {
+  --pair-ground-surface: #0c0c0c;
+  --pair-ground-ink: #fafafa;
+  --pair-ground-soft: #a1a1aa;
+  --pair-panel-surface: #1c1c1e;
+  --pair-panel-ink: #fafafa;
+  --pair-panel-soft: #a1a1aa;
+  --pair-raised-surface: #252528;
+  --pair-raised-ink: #fafafa;
+  --pair-raised-soft: #a1a1aa;
+  --pair-press-surface: #2f2f33;
+  --pair-press-ink: #fafafa;
+  --pair-press-soft: #a1a1aa;
+  --pair-strong-surface: #3f3f43;
+  --pair-strong-ink: #fafafa;
+  --pair-strong-soft: #aaaaac;
+  --pair-paper-surface: #fafafa;
+  --pair-paper-ink: #18181b;
+  --pair-paper-soft: #69696b;
+  --pair-amber-surface: #fde68a;
+  --pair-amber-ink: #433f0b;
+  --pair-amber-soft: #71682c;
+  --pair-rose-surface: #fca5a5;
+  --pair-rose-ink: #7f1d1d;
+  --pair-rose-soft: #8a2b29;
+  --pair-warning-surface: #433f0b;
+  --pair-warning-ink: #fde68a;
+  --pair-warning-soft: #b9a95d;
+  --pair-danger-surface: #7f1d1d;
+  --pair-danger-ink: #fca5a5;
+  --pair-danger-soft: #ee9695;
+}
+[data-pair="ground"] { --surface: var(--pair-ground-surface); --ink: var(--pair-ground-ink); --ink-soft: var(--pair-ground-soft); }
+[data-pair="panel"] { --surface: var(--pair-panel-surface); --ink: var(--pair-panel-ink); --ink-soft: var(--pair-panel-soft); }
+[data-pair="raised"] { --surface: var(--pair-raised-surface); --ink: var(--pair-raised-ink); --ink-soft: var(--pair-raised-soft); }
+[data-pair="press"] { --surface: var(--pair-press-surface); --ink: var(--pair-press-ink); --ink-soft: var(--pair-press-soft); }
+[data-pair="strong"] { --surface: var(--pair-strong-surface); --ink: var(--pair-strong-ink); --ink-soft: var(--pair-strong-soft); }
+[data-pair="paper"] { --surface: var(--pair-paper-surface); --ink: var(--pair-paper-ink); --ink-soft: var(--pair-paper-soft); }
+[data-pair="amber"] { --surface: var(--pair-amber-surface); --ink: var(--pair-amber-ink); --ink-soft: var(--pair-amber-soft); }
+[data-pair="rose"] { --surface: var(--pair-rose-surface); --ink: var(--pair-rose-ink); --ink-soft: var(--pair-rose-soft); }
+[data-pair="warning"] { --surface: var(--pair-warning-surface); --ink: var(--pair-warning-ink); --ink-soft: var(--pair-warning-soft); }
+[data-pair="danger"] { --surface: var(--pair-danger-surface); --ink: var(--pair-danger-ink); --ink-soft: var(--pair-danger-soft); }
+
+/* The mechanism: one rule applies any pair to any element. */
+[data-pair] {
+  background-color: var(--surface);
+  color: var(--ink);
+  --foreground: var(--ink);          /* shadcn compatibility */
+  --muted-foreground: var(--ink-soft);
+}
+
+/* The CTA inverts the pair: ink fill, surface-colored label. */
+.cta { background: var(--ink); color: var(--surface); }
+
+/* Table zebra and row hover step up the neutral pairs: raised, then press. */
+.zebra > tr:nth-child(odd) {
+  --surface: var(--pair-raised-surface); --ink-soft: var(--pair-raised-soft);
+  --muted-foreground: var(--ink-soft); background-color: var(--surface);
+}
+.zebra > tr:hover {
+  --surface: var(--pair-press-surface); --ink-soft: var(--pair-press-soft);
+  --muted-foreground: var(--ink-soft); background-color: var(--surface);
+}

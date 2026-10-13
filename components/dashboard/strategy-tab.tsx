@@ -20,7 +20,7 @@ export function StrategyTab({ project }: { project: Project }) {
           <div className="grid gap-2 md:grid-cols-3">
             {project.pillars.map((pillar, i) => (
               <Tile key={pillar} className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground">
+                <span className="text-xs font-bold text-ink-soft">
                   Pillar {i + 1}
                 </span>
                 <span className="text-sm">{pillar}</span>
@@ -42,13 +42,13 @@ export function StrategyTab({ project }: { project: Project }) {
                   className={cn(
                     "text-sm font-bold",
                     r.done && "text-success",
-                    !r.done && !r.now && "text-muted-foreground"
+                    !r.done && !r.now && "text-ink-soft"
                   )}
                 >
                   {r.done ? "✓ " : ""}
                   {r.quarter}
                 </span>
-                <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <ul className="flex flex-col gap-1 text-sm text-ink-soft">
                   {r.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}

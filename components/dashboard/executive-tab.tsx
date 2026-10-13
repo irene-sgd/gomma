@@ -72,7 +72,7 @@ export function ExecutiveTab({
                 />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-sm font-bold">{s.title}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-ink-soft">
                     {s.detail}
                   </span>
                 </div>

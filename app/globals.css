@@ -5,14 +5,25 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Spotify web design system mapped onto shadcn tokens.
- * Surfaces: lighter = closer. base #000 > card #121212 > secondary #1f1f1f > accent #292929 > tinted #3b3b3b.
- * No borders or drop shadows on surfaces; the 8px gap on the black ground divides panels.
+ * Design system: spotify-developed-gomma (see docs/design-system.html and CLAUDE.md).
+ * Order matters: tokens, pairs, then the shadcn theme.
  */
+@import "./design-system/tokens.css";
+@import "./design-system/pairs.css";
+@import "./design-system/brands/indigo.css";
+@import "./design-system/decor-motion.css";
+@import "./design-system/shadcn-theme.css";
+
+/* App typeface (weights 400 and 700) and the app-only tokens the base does not cover. */
+:root {
+  /* Highlight decor drifts between the brand's two vivid fills. */
+  --decor-a: var(--indigo-5);
+  --decor-b: var(--indigo-6);
+  --font-ui: SpotifyMixUI, CircularSp-Arab, CircularSp-Cyrl, "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif;
+}
+
 @theme inline {
-  --font-sans: SpotifyMixUI, CircularSp-Arab, CircularSp-Cyrl, "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif;
   --font-heading: var(--font-sans);
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -28,71 +39,41 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-tinted: var(--tinted);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-promo-blue: var(--promo-blue);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-tinted: var(--tinted);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-promo-blue: var(--promo-blue);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
-  --radius-xl: 16px;
 }
 
+/* Data colors: status green and chart series. These are data encodings, not surfaces. */
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #121212;
-  --card-foreground: #ffffff;
-  --popover: #292929;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #000000;
-  --secondary: #1f1f1f;
-  --secondary-foreground: #ffffff;
-  --muted: #1f1f1f;
-  --muted-foreground: #b3b3b3;
-  --accent: #292929;
-  --accent-foreground: #ffffff;
-  --tinted: #3b3b3b;
+  --tinted: var(--pair-strong-surface);
   --success: #1ed760;
   --success-foreground: #000000;
-  --promo-blue: #509bf5;
-  --destructive: #af2896;
-  --border: #7c7c7c;
-  --input: #1f1f1f;
-  --ring: #ffffff;
+  --promo-blue: var(--link);
   --chart-1: #1ed760;
-  --chart-2: #509bf5;
-  --chart-3: #b3b3b3;
-  --chart-4: #3b3b3b;
-  --chart-5: #af2896;
-  --radius: 0.5rem;
-  color-scheme: dark;
+  --chart-2: #60a5fa;
+  --chart-3: #a1a1aa;
+  --chart-4: var(--pair-strong-surface);
+  --chart-5: #fca5a5;
 }
 
 @layer base {
-  * {
-    @apply outline-ring/50;
-  }
-  html {
-    @apply font-sans antialiased;
-  }
   body {
     @apply bg-background text-foreground text-sm;
   }
   ::selection {
-    background: #ffffff;
-    color: #000000;
+    background: var(--pair-ground-ink);
+    color: var(--pair-ground-surface);
   }
 }
 

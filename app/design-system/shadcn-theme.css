@@ -1,0 +1,43 @@
+/* spotify-developed-gomma: shadcn/ui + Tailwind v4 theme mapping.
+   Import after tokens.css and pairs.css. Maps shadcn variables onto pairs and
+   exposes bg-surface, text-ink and text-ink-soft utilities. Set
+   <html class="dark"> and <body data-pair="ground">. */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-link: var(--link);
+  --color-border-essential: var(--border-essential);
+  --font-sans: var(--font-ui);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+.dark {
+  --radius: 0.5rem;
+  --background: var(--pair-ground-surface);
+  --foreground: var(--pair-ground-ink);
+  --card: var(--pair-panel-surface);
+  --card-foreground: var(--pair-panel-ink);
+  --popover: var(--pair-press-surface);
+  --popover-foreground: var(--pair-press-ink);
+  --primary: var(--pair-ground-ink);
+  --primary-foreground: var(--pair-ground-surface);
+  --secondary: var(--pair-raised-surface);
+  --secondary-foreground: var(--pair-raised-ink);
+  --muted: var(--pair-raised-surface);
+  --muted-foreground: var(--pair-ground-soft);
+  --accent: var(--pair-press-surface);
+  --accent-foreground: var(--pair-press-ink);
+  --destructive: var(--pair-danger-ink);
+  --border: var(--pair-press-surface);
+  --input: var(--pair-raised-surface);
+  --ring: var(--pair-ground-ink);
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { @apply font-sans; }
+}

@@ -1,0 +1,80 @@
+/* spotify-developed-gomma: CSS decor motion (optional fallback).
+   The primary decor is the shader (lib/decor-shader.ts, react/decor-shader.tsx).
+   This file animates the SVG version (react/decor-sweep.tsx) and is what the
+   shader component falls back to when WebGL2 is unavailable.
+   Import after pairs.css and your brand file.
+
+   1. Line breathing: each line rotates a fraction of a degree about its bundle
+      origin (the component sets --i, --a, --ox, --oy), phase-shifted so a soft
+      wave moves across the fan.
+   2. Glow and color drift: a soft gradient bloom sits behind the lines. Its
+      blur, angle and color are registered custom properties, so CSS can animate
+      them. The color drifts between --decor-a and --decor-b, and the lines'
+      tint drifts with it.
+
+   Set the two colors to your brand's vivid fills, for example:
+     :root { --decor-a: var(--brand-6); --decor-b: var(--accent-6); }
+   Everything stops under prefers-reduced-motion. */
+
+:root {
+  --decor-a: #3b82f6;
+  --decor-b: #14b8a6;
+}
+
+@property --glow-blur { syntax: "<length>"; inherits: false; initial-value: 56px; }
+@property --glow-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --glow-color { syntax: "<color>"; inherits: false; initial-value: #3b82f6; }
+
+/* ---- line breathing ---- */
+@keyframes decor-breathe {
+  0%, 100% { transform: rotate(calc(var(--i) * var(--a) * -1)); opacity: 0.8; }
+  50% { transform: rotate(calc(var(--i) * var(--a))); opacity: 1; }
+}
+.decor-line {
+  transform-box: view-box;
+  transform-origin: var(--ox) var(--oy);
+  animation: decor-breathe 16s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.08s);
+}
+
+/* ---- glow and color drift ---- */
+@keyframes decor-glow-drift {
+  from { --glow-blur: 48px; --glow-angle: 0deg; }
+  to { --glow-blur: 84px; --glow-angle: 140deg; }
+}
+@keyframes decor-hue {
+  0%, 100% { --glow-color: var(--decor-a); }
+  50% { --glow-color: var(--decor-b); }
+}
+.decor-glow {
+  --glow-color: var(--decor-a);
+  --glow-lighter: color-mix(in oklch, var(--glow-color), white 40%);
+  --glow-darker: color-mix(in oklch, var(--glow-color), black 50%);
+  position: absolute;
+  top: -35%;
+  right: -10%;
+  width: 62%;
+  height: 170%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  filter: blur(var(--glow-blur));
+  background: conic-gradient(
+    from var(--glow-angle) at 65% 55%,
+    var(--glow-color), var(--glow-darker), var(--glow-lighter), var(--glow-color)
+  );
+  animation:
+    decor-glow-drift 11s ease-in-out infinite alternate,
+    decor-hue 28s ease-in-out infinite;
+}
+/* The lines share the hue animation; their tint follows the glow color. */
+.decor-lines {
+  --glow-color: var(--decor-a);
+  --decor-line: color-mix(in oklch, var(--glow-color), white 82%);
+  animation: decor-hue 28s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decor-line, .decor-glow, .decor-lines { animation: none; }
+}

@@ -7,8 +7,9 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
     <InputPrimitive
       type={type}
       data-slot="input"
+      data-pair="raised"
       className={cn(
-        "h-12 w-full min-w-0 rounded-full bg-secondary px-4 py-3 text-base text-foreground transition-colors duration-100 outline-none placeholder:text-muted-foreground hover:bg-accent focus-visible:outline-3 focus-visible:outline-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:outline-3 aria-invalid:outline-destructive",
+        "h-10 w-full min-w-0 rounded-full border-0 px-4 py-1 text-base transition-colors outline-none hover:bg-(--pair-press-surface) file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-(--ink) placeholder:text-(--ink-soft) focus-visible:ring-3 focus-visible:ring-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 aria-invalid:ring-destructive/40 md:text-sm",
         className
       )}
       {...props}

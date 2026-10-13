@@ -43,7 +43,7 @@ export function CashFlowChart({
               hideLabel={false}
               formatter={(value, name) => (
                 <span className="flex w-full items-center justify-between gap-4">
-                  <span className="text-muted-foreground">
+                  <span className="text-ink-soft">
                     {cashFlowConfig[name as keyof typeof cashFlowConfig]
                       ?.label ?? name}
                   </span>
@@ -99,7 +99,7 @@ export function TaskStatusChart({ counts }: { counts: TaskCounts }) {
       </ChartContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl leading-none font-bold">{counts.total}</span>
-        <span className="text-xs text-muted-foreground">tasks</span>
+        <span className="text-xs text-ink-soft">tasks</span>
       </div>
     </div>
   )

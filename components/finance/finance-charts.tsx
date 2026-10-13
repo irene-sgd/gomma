@@ -26,7 +26,7 @@ const tooltip = (config: ChartConfig) => (
   <ChartTooltipContent
     formatter={(value, name) => (
       <span className="flex w-full items-center justify-between gap-4">
-        <span className="text-muted-foreground">
+        <span className="text-ink-soft">
           {config[name as string]?.label ?? name}
         </span>
         <span className="font-bold">{money(Number(value))}</span>
@@ -149,7 +149,7 @@ export function MarginChart({
             <ChartTooltipContent
               formatter={(value, name) => (
                 <span className="flex w-full items-center justify-between gap-4">
-                  <span className="text-muted-foreground">
+                  <span className="text-ink-soft">
                     {marginConfig[name as keyof typeof marginConfig]?.label ?? name}
                   </span>
                   <span className="font-bold">{Math.round(Number(value))}%</span>

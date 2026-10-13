@@ -1,0 +1,41 @@
+/* spotify-developed-gomma: base tokens
+   Spotify's separation logic (fill steps and gaps, no borders or shadows),
+   developed by GOMMA with surface and ink pairs. Brand-agnostic: add a brand
+   with tools/brand.py and import brands/<name>.css. */
+:root {
+  color-scheme: dark;
+
+  /* Neutral surface ramp: one step lighter = one level closer. See css/pairs.css. */
+  --bg-base: #0c0c0c;
+  --bg-elevated: #1c1c1e;
+  --bg-highlight: #252528;
+  --bg-press: #2f2f33;
+  --bg-tinted: #3f3f43;
+
+  /* Text. Prefer the pair tokens (--ink, --ink-soft); these are for the page shell. */
+  --text-base: #fafafa;
+  --text-subdued: #a1a1aa;
+  --text-muted: #71717a;
+  --link: #60a5fa;          /* the one color outside a pair */
+  --border-essential: #7c7c82;  /* the only border: outline buttons */
+
+  /* Highlight sheen: diagonal wash over a brand or vivid fill */
+  --sheen: linear-gradient(111.4deg, rgba(0, 0, 0, 0.2) 2%, rgba(102, 102, 102, 0.2) 95%);
+  --decor-blend: overlay;
+
+  /* Type: two weights, 400 and 700. Set --font-ui to your project's typeface.
+     The fallbacks are the ones the Spotify reference uses. */
+  --font-ui: "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Spacing, 8px base */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+
+  /* Radius: containers 8px, anything you press is a pill */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 16px;
+  --radius-pill: 9999px; --radius-circle: 50%;
+
+  /* Controls */
+  --control-lg: 40px; --control-sm: 32px;
+}

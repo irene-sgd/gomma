@@ -2,7 +2,7 @@ import { cn } from "cn"
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+    <p className="text-xs font-bold tracking-widest text-ink-soft uppercase">
       {children}
     </p>
   )
@@ -10,7 +10,7 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function Tile({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={cn("rounded-md bg-secondary p-4", className)} {...props} />
+    <div className={cn("rounded-md bg-(--pair-raised-surface) p-4", className)} {...props} />
   )
 }
 
@@ -31,17 +31,17 @@ export function Metric({
 }) {
   return (
     <Tile className="flex flex-col gap-1">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm text-ink-soft">{label}</span>
       <span
         className={cn(
           "text-2xl leading-tight font-bold",
           tone === "success" && "text-success",
-          tone === "muted" && "text-muted-foreground"
+          tone === "muted" && "text-ink-soft"
         )}
       >
         {value}
       </span>
-      <span className="text-xs text-muted-foreground">{hint}</span>
+      <span className="text-xs text-ink-soft">{hint}</span>
     </Tile>
   )
 }

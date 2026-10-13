@@ -62,7 +62,7 @@ export function Login({
                   }}
                 />
                 {failed && (
-                  <FieldError className="rounded-md bg-secondary px-4 py-3 text-center text-sm text-foreground">
+                  <FieldError className="rounded-md bg-(--pair-raised-surface) px-4 py-3 text-center text-sm text-foreground">
                     Login failed. Please try again.
                   </FieldError>
                 )}

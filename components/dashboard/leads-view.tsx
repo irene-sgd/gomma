@@ -229,7 +229,7 @@ export function LeadsView({ token }: { token: string }) {
       <CardContent className="flex flex-col gap-4">
         {screenable.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="mr-2 text-muted-foreground" aria-live="polite">
+            <span className="mr-2 text-ink-soft" aria-live="polite">
               {picked.length} of {screenable.length} selected
             </span>
             <Button
@@ -268,7 +268,7 @@ export function LeadsView({ token }: { token: string }) {
         )}
 
         {status && (
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-ink-soft">
             {status}
           </p>
         )}
@@ -343,7 +343,7 @@ export function LeadsView({ token }: { token: string }) {
                   </TableCell>
                   <TableCell className="max-w-72 whitespace-normal">
                     <div className="font-bold">{lead.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-ink-soft">
                       {[lead.contactName, lead.email]
                         .filter(Boolean)
                         .join(" · ")}
@@ -354,7 +354,7 @@ export function LeadsView({ token }: { token: string }) {
                       </div>
                     )}
                     {lead.state === "failed" && (
-                      <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="mt-1 text-xs text-ink-soft">
                         {lead.failure}
                       </div>
                     )}
@@ -368,7 +368,7 @@ export function LeadsView({ token }: { token: string }) {
                   <TableCell className="max-w-64 whitespace-normal">
                     <div className="flex flex-wrap gap-1">
                       {lead.flags.length === 0 ? (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-ink-soft">—</span>
                       ) : (
                         lead.flags.map((flag) => (
                           <Badge key={flag}>{flag}</Badge>
@@ -376,7 +376,7 @@ export function LeadsView({ token }: { token: string }) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-ink-soft">
                     {received(lead.created)}
                   </TableCell>
                   <TableCell>

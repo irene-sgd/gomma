@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spotify-developed GOMMA Design System</title>
+<style>
+:root {
+  color-scheme: dark;
+  /* Surface ramp: one step lighter = one level closer */
+  --bg-base: #0c0c0c;
+  --bg-elevated: #1c1c1e;
+  --bg-highlight: #252528;
+  --bg-press: #2f2f33;
+  --bg-tinted: #3f3f43;
+  /* Text */
+  --text-base: #fafafa;
+  --text-subdued: #a1a1aa;
+  --text-muted: #71717a;
+  /* Support */
+  --accent: #60a5fa;
+  --inverted: #fafafa;
+  --on-inverted: #09090b;
+  --border-essential: #7c7c82;
+  /* Tints: the colored surfaces */
+  --tint-neutral: #1c1c1e;
+  --tint-blue: var(--blue-3);
+  --tint-teal: var(--teal-3);
+  --blue-0: #000e22;
+  --blue-1: #001f3c;
+  --blue-2: #003359;
+  --blue-3: #014d78;
+  --blue-4: #1c5d88;
+  --blue-5: #306b95;
+  --blue-6: #019df7; --teal-6: #03c3bb;
+  --on-blue-vivid: #00051e; --on-blue-vivid-subdued: #000823;
+  --on-teal-vivid: #000a09; --on-teal-vivid-subdued: #002724;
+  --blue-6: #019df7;      --teal-6: #03c3bb;
+  --on-blue-vivid: #00051e; --on-blue-vivid-subdued: #000823;
+  --on-teal-vivid: #000a09; --on-teal-vivid-subdued: #002724;
+  --on-blue-subdued: #d0d9e0; --on-blue-muted: #adb9c3;
+  --teal-0: #001211;
+  --teal-1: #002523;
+  --teal-2: #003b38;
+  --teal-3: #015c59;
+  --teal-4: #206c68;
+  --teal-5: #357a76;
+  --on-teal-subdued: #d0dad9; --on-teal-muted: #adbbb9;
+  --sheen: linear-gradient(111.4deg, rgba(0,0,0,.2) 2%, rgba(102,102,102,.2) 95%);
+  --arc: rgba(255,255,255,.28);
+  --decor-blend: overlay;
+  /* Status */
+  --warning-bg: #433f0b; --warning-fg: #fde68a;
+  --danger-bg: #7f1d1d;  --danger-fg: #fca5a5;
+
+  --font-sans: "Helvetica Neue", helvetica, arial, "Hiragino Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 16px; --radius-pill: 9999px; --radius-circle: 50%;
+  --control-lg: 40px; --control-sm: 32px;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg-base); }
+body { margin: 0; padding: var(--space-2); background: var(--bg-base); color: var(--text-base); font: 400 16px/1.5 var(--font-sans); -webkit-font-smoothing: antialiased; }
+code { font-family: var(--font-mono); font-size: 13px; }
+p { max-width: 68ch; }
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-2); max-width: 1400px; margin: 0 auto; }
+.nav { position: sticky; top: var(--space-2); align-self: start; background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-4) var(--space-2); display: flex; flex-direction: column; gap: 2px; }
+.nav-title { padding: var(--space-2) var(--space-3) var(--space-4); font-weight: 700; }
+.nav-title small { display: block; font-weight: 400; font-size: 12px; color: var(--text-subdued); }
+.nav a { text-decoration: none; color: var(--text-subdued); font-size: 14px; font-weight: 700; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+.nav a:hover { color: var(--text-base); background: var(--bg-highlight); }
+.nav a:focus-visible, .btn:focus-visible { outline: 3px solid var(--text-base); outline-offset: 2px; }
+main { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.panel { background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-8) var(--space-8) 40px; }
+.panel > h2 { margin: 0 0 var(--space-2); font-size: 24px; line-height: 1.25; font-weight: 700; }
+.lede { margin: 0 0 var(--space-6); color: var(--text-subdued); }
+h3 { font-size: 16px; font-weight: 700; margin: var(--space-8) 0 var(--space-3); }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-subdued); margin: 0 0 var(--space-2); }
+
+/* Hero */
+.hero { background: var(--bg-elevated); border-radius: var(--radius-md); padding: 40px var(--space-8); display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-8); align-items: end; }
+.hero h1 { margin: 0; font-size: clamp(44px, 7vw, 72px); line-height: .98; letter-spacing: -.02em; font-weight: 700; }
+.hero p { color: var(--text-subdued); margin: var(--space-4) 0 0; }
+.hero-art { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 80px 80px; gap: var(--space-2); }
+.hero-art div { border-radius: var(--radius-md); }
+.meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+.tag { font-size: 12px; font-weight: 700; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--bg-highlight); color: var(--text-subdued); }
+
+/* Tinted surface: tint + sheen + optional arcs. The only texture in the system. */
+.surface { isolation: isolate; position: relative; overflow: hidden; border-radius: var(--radius-md); background-color: var(--tint, var(--tint-neutral)); background-image: var(--sheen); }
+.surface.blue { --tint: var(--tint-blue); --text-subdued: var(--on-blue-subdued); }
+.surface.teal { --tint: var(--tint-teal); --text-subdued: var(--on-teal-subdued); }
+.surface .arcs-art { position: absolute; top: -16px; right: -143px; width: 471px; height: 257px; pointer-events: none; fill: none; stroke: var(--arc); }
+
+.decor-art { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: var(--decor-blend); }
+@keyframes decor-breathe { 0%, 100% { transform: rotate(calc(var(--i) * var(--a) * -1)); opacity: .8; } 50% { transform: rotate(calc(var(--i) * var(--a))); opacity: 1; } }
+.decor-line { transform-box: view-box; transform-origin: var(--ox) var(--oy); animation: decor-breathe 16s ease-in-out infinite; animation-delay: calc(var(--i) * -0.08s); }
+@media (prefers-reduced-motion: reduce) { .decor-line { animation: none; } }
+.glow-card { padding: var(--space-6); min-height: 168px; display: flex; flex-direction: column; justify-content: center; gap: var(--space-2); align-items: flex-start; }
+:root { --decor-a: var(--blue-6); --decor-b: var(--teal-6); }
+.glow-card > h4, .glow-card > p, .glow-card > .btn { position: relative; z-index: 1; }
+.glow-card canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
+.decor-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.decor-demo { min-height: 180px; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
+.decor-demo b { font-size: 16px; position: relative; }
+.decor-demo p { margin: 0; font-size: 14px; color: var(--text-subdued); max-width: 26ch; position: relative; }
+.decor-demo code { margin-top: auto; font-size: 12px; color: var(--text-subdued); position: relative; }
+
+.ramp6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-radius: var(--radius-md); overflow: hidden; }
+.ramp6 > div { min-height: 168px; padding: var(--space-4); display: flex; flex-direction: column; justify-content: space-between; color: var(--text-base); }
+.ramp6 b { font-size: 14px; } .ramp6 span { font-size: 12px; display: block; opacity: .8; }
+.ramp6 .lvl { font-size: 32px; font-weight: 700; line-height: 1; opacity: 1; }
+.ramp6 .cr { font-size: 12px; opacity: .8; margin-top: var(--space-2); line-height: 1.5; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.nestb { border-radius: var(--radius-md); padding: var(--space-2); }
+.nestb > div { border-radius: var(--radius-md); padding: var(--space-3); }
+.nestb code { display: block; margin-bottom: var(--space-2); font-size: 12px; color: rgba(255,255,255,.75); }
+.ok { color: #86efac; } .no { color: #fca5a5; }
+
+.surface.blue.vivid { --tint: var(--blue-6); --text-subdued: var(--on-blue-vivid-subdued); color: var(--on-blue-vivid); }
+.surface.teal.vivid { --tint: var(--teal-6); --text-subdued: var(--on-teal-vivid-subdued); color: var(--on-teal-vivid); }
+.surface.vivid .arcs-art { stroke: rgba(255,255,255,.5); }
+.surface.blue.vivid .kpi-ink, .surface.blue.vivid .row { color: var(--on-blue-vivid-subdued); }
+.surface.teal.vivid .row { color: var(--on-teal-vivid-subdued); }
+.surface.blue.vivid .btn-ink { background: var(--on-blue-vivid); color: #fafafa; }
+.surface.teal.vivid .btn-ink { background: var(--on-teal-vivid); color: #fafafa; }
+.surface.vivid .btn-ink { position: relative; z-index: 1; }
+
+/* Surface and ink pairs */
+.pair { background-color: var(--surface); color: var(--ink); --text-subdued: var(--ink-soft); }
+.pair .soft { color: var(--ink-soft); }
+.pair svg.mark { fill: none; stroke: currentColor; stroke-width: 2; }
+.pair .btn-pair { background: var(--ink); color: var(--surface); }
+.pair-ground { --surface: #0c0c0c; --ink: #fafafa; --ink-soft: #a1a1aa; }
+.pair-panel { --surface: #1c1c1e; --ink: #fafafa; --ink-soft: #a1a1aa; }
+.pair-raised { --surface: #252528; --ink: #fafafa; --ink-soft: #a1a1aa; }
+.pair-press { --surface: #2f2f33; --ink: #fafafa; --ink-soft: #a1a1aa; }
+.pair-strong { --surface: #3f3f43; --ink: #fafafa; --ink-soft: #aaaaac; }
+.pair-blue { --surface: #014d78; --ink: #fafafa; --ink-soft: #d0d9e0; }
+.pair-teal { --surface: #015c59; --ink: #fafafa; --ink-soft: #d0dad9; }
+.pair-blue-vivid { --surface: #019df7; --ink: #00051e; --ink-soft: #000925; }
+.pair-teal-vivid { --surface: #03c3bb; --ink: #000a09; --ink-soft: #002a28; }
+.pair-paper { --surface: #fafafa; --ink: #003359; --ink-soft: #476785; }
+.pair-paper-blue { --surface: #e8f0f6; --ink: #003359; --ink-soft: #436483; }
+.pair-mist { --surface: #cfe7e5; --ink: #003b38; --ink-soft: #3e6764; }
+.pair-amber { --surface: #fde68a; --ink: #433f0b; --ink-soft: #71682c; }
+.pair-rose { --surface: #fca5a5; --ink: #7f1d1d; --ink-soft: #8a2b29; }
+.pair-warning { --surface: #433f0b; --ink: #fde68a; --ink-soft: #b9a95d; }
+.pair-danger { --surface: #7f1d1d; --ink: #fca5a5; --ink-soft: #ee9695; }
+.pair-blue, .pair-teal, .pair-blue-vivid, .pair-teal-vivid { background-image: var(--sheen); }
+.callout-rule { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); font-size: 14px; color: var(--text-subdued); margin-bottom: var(--space-4); max-width: 80ch; }
+.callout-rule b { color: var(--text-base); }
+.pairgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.pcard { border-radius: var(--radius-md); padding: var(--space-5); min-height: 200px; display: flex; flex-direction: column; gap: var(--space-2); position: relative; overflow: hidden; }
+.pcard .top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.pcard .val { font-size: 24px; font-weight: 700; line-height: 1.1; margin-top: var(--space-2); }
+.pcard .cap { font-size: 13px; }
+.pcard .btn { margin-top: auto; align-self: flex-start; min-height: var(--control-sm); padding: 0 var(--space-4); }
+
+/* Color */
+.ramp { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-radius: var(--radius-md); overflow: hidden; }
+.ramp div { min-height: 140px; padding: var(--space-4); display: flex; flex-direction: column; justify-content: space-between; }
+.ramp b { font-size: 14px; }
+.ramp span { font-size: 12px; color: var(--text-subdued); }
+.ramp .lvl { font-size: 32px; font-weight: 700; line-height: 1; color: var(--text-base); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-2); }
+.sw { background: var(--bg-highlight); border-radius: var(--radius-md); overflow: hidden; }
+.sw .chip { height: 72px; }
+.sw .info { padding: var(--space-3) var(--space-4) var(--space-4); }
+.sw b { display: block; font-size: 14px; }
+.sw code { color: var(--text-subdued); font-size: 12px; }
+.sw p { margin: var(--space-2) 0 0; font-size: 12px; line-height: 1.45; color: var(--text-subdued); }
+.tints { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.plain { background: var(--bg-elevated); border-radius: var(--radius-md); }
+.promo { padding: var(--space-6); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); min-height: 160px; }
+.promo h4 { margin: 0; font-size: 16px; max-width: 24ch; }
+.promo p { margin: 0; font-size: 14px; color: var(--text-subdued); max-width: 34ch; }
+.promo .btn { margin-top: auto; position: relative; z-index: 1; }
+.kpi { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-3); min-height: 125px; }
+.kpi .row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--text-subdued); }
+.kpi .val { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.kpi .cap { font-size: 12px; color: var(--text-subdued); }
+
+/* Separation compare */
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.stage { border-radius: var(--radius-md); padding: var(--space-6); }
+.stage-label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 var(--space-4); }
+.stage.ai { background: #16161a; }
+.stage.ai .stage-label { color: #9a9aa6; }
+.ai-card { border: 1px solid #3a3a44; border-radius: 12px; padding: var(--space-3); box-shadow: 0 6px 18px rgba(0,0,0,.45); background: #1c1c22; margin-bottom: var(--space-3); }
+.ai-input { height: 30px; border: 1px solid #3a3a44; border-radius: 8px; margin-bottom: var(--space-3); }
+.stage.lp { background: var(--bg-base); }
+.stage.lp .stage-label { color: var(--text-subdued); }
+.lp-main { background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.lp-input { height: 30px; border-radius: var(--radius-pill); background: var(--bg-highlight); }
+.lp-card { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-3); }
+.line { height: 8px; border-radius: var(--radius-pill); background: var(--bg-tinted); }
+.line.w { background: var(--text-base); width: 60%; }
+.line.s { width: 40%; margin-top: 8px; }
+.ai .line { background: #3a3a44; } .ai .line.w { background: #e6e6ee; }
+.count { display: flex; gap: var(--space-4); margin-top: var(--space-4); font-size: 12px; color: var(--text-subdued); }
+.count b { font-size: 20px; display: block; color: var(--text-base); }
+
+.table-wrap { overflow-x: auto; border-radius: var(--radius-md); background: var(--bg-highlight); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: var(--space-3) var(--space-4); vertical-align: top; }
+th { color: var(--text-subdued); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+tbody tr:nth-child(odd) { background: var(--bg-press); }
+td:first-child { color: var(--text-subdued); }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--space-2); }
+.rule { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-5); transition: background-color 100ms; }
+.rule:hover { background: var(--bg-press); }
+.rule .n { font-size: 40px; font-weight: 700; line-height: 1; color: var(--accent); }
+.rule h4 { margin: var(--space-3) 0 var(--space-2); font-size: 16px; }
+.rule p { margin: 0; font-size: 14px; color: var(--text-subdued); line-height: 1.5; }
+.nest { background: var(--bg-base); border-radius: var(--radius-md); padding: var(--space-2); }
+.nest > div { background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-4); }
+.nest > div > div { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-4); }
+.nest > div > div > div { background: var(--bg-press); border-radius: var(--radius-md); padding: var(--space-4); }
+.nest > div > div > div > div { background: var(--bg-tinted); border-radius: var(--radius-md); padding: var(--space-4); }
+.nest code { color: var(--text-subdued); display: block; margin-bottom: var(--space-3); font-size: 12px; }
+.nest > div > div > div > div code { margin: 0; color: var(--text-base); }
+ul.apply { padding: 0; margin: 0; list-style: none; display: grid; gap: var(--space-2); }
+ul.apply li { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-size: 14px; color: var(--text-subdued); }
+ul.apply b { color: var(--text-base); }
+
+.type-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.type-list > div { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-4); align-items: baseline; }
+.spec b { display: block; font-size: 14px; } .spec span { font-size: 12px; color: var(--text-subdued); }
+
+.scale { display: flex; flex-direction: column; gap: var(--space-2); }
+.scale-row { display: grid; grid-template-columns: 100px 60px minmax(0, 1fr); gap: var(--space-4); align-items: center; font-size: 14px; }
+.scale-row span { color: var(--text-subdued); }
+.bar { height: 16px; background: var(--accent); border-radius: 2px; }
+.radii { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-2); }
+.radii div { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-4); font-size: 14px; }
+.radii i { display: block; width: 64px; height: 48px; background: var(--text-subdued); margin-bottom: var(--space-3); }
+.radii span { display: block; color: var(--text-subdued); font-size: 12px; }
+
+.comp { display: grid; gap: var(--space-2); margin-bottom: var(--space-6); }
+.comp-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
+.comp-head h3 { margin: 0; } .comp-head span { font-size: 12px; color: var(--text-subdued); }
+.demo { background: var(--bg-base); border-radius: var(--radius-md); padding: var(--space-6); display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.demo.on-panel { background: var(--bg-elevated); }
+.note { margin: var(--space-2) 0 0; font-size: 14px; color: var(--text-subdued); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); border: 0; border-radius: var(--radius-pill); font: 700 14px/1 var(--font-sans); cursor: pointer; white-space: nowrap; transition: transform 33ms, background-color 100ms; min-height: var(--control-lg); padding: 0 var(--space-6); }
+.btn:hover { transform: scale(1.04); }
+.btn:active { transform: scale(1); opacity: .7; }
+.btn-sm { min-height: var(--control-sm); padding: 0 var(--space-4); }
+.btn-primary { background: var(--inverted); color: var(--on-inverted); }
+.btn-fill { background: var(--bg-highlight); color: var(--text-base); }
+.btn-fill:hover { background: var(--bg-press); }
+.btn-outline { background: transparent; color: var(--text-base); box-shadow: inset 0 0 0 1px var(--border-essential); }
+.btn-outline:hover { box-shadow: inset 0 0 0 1px var(--text-base); }
+.btn-text { background: transparent; color: var(--text-subdued); padding: 0 var(--space-3); }
+.btn-text:hover, .btn-text.active { color: var(--text-base); background: var(--bg-highlight); transform: none; }
+.search { position: relative; flex: 1 1 280px; max-width: 320px; }
+.search svg { position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; fill: var(--text-subdued); }
+.search input { width: 100%; height: var(--control-lg); padding: 0 var(--space-4) 0 40px; border: 0; border-radius: 500px; background: var(--bg-highlight); color: var(--text-base); font: 400 14px var(--font-sans); outline: none; transition: background-color 100ms; }
+.search input::placeholder { color: var(--text-subdued); }
+.search input:hover { background: var(--bg-press); }
+.search input:focus-visible { outline: 3px solid var(--text-base); }
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--bg-press); color: var(--text-base); }
+.badge.warning { background: var(--warning-bg); color: var(--warning-fg); }
+.badge.danger { background: var(--danger-bg); color: var(--danger-fg); }
+
+.mock { display: grid; grid-template-rows: auto auto auto auto; gap: var(--space-2); background: var(--bg-base); border-radius: var(--radius-md); padding: var(--space-2); }
+.mock-nav { background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-4); }
+.mock-nav .grow { flex: 1; }
+.mock-nav b { font-size: 14px; }
+.mock-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.mock-panel { background: var(--bg-elevated); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+
+.voice { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-2); }
+.voice div { background: var(--bg-highlight); border-radius: var(--radius-md); padding: var(--space-4); }
+.voice q { font-size: 18px; font-weight: 700; quotes: none; display: block; }
+.voice span { display: block; margin-top: var(--space-2); font-size: 12px; color: var(--text-subdued); }
+pre { margin: 0; background: var(--bg-base); border-radius: var(--radius-md); padding: var(--space-5); overflow-x: auto; font: 13px/1.6 var(--font-mono); color: var(--text-subdued); }
+footer { padding: var(--space-6) var(--space-8); font-size: 12px; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .pairgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pair { grid-template-columns: 1fr; }
+  .ramp6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .decor-grid { grid-template-columns: 1fr; }
+  .shell { grid-template-columns: 1fr; } .nav { position: static; flex-direction: row; flex-wrap: wrap; }
+  .nav-title { width: 100%; } .hero, .compare, .tints, .mock-kpis { grid-template-columns: 1fr; }
+  .type-list > div { grid-template-columns: 1fr; gap: var(--space-2); }
+}
+@media (max-width: 600px) {
+  .pairgrid { grid-template-columns: 1fr; } .panel, .hero { padding: var(--space-6) var(--space-4); } .ramp, .ramp6 { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } .btn:hover { transform: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <linearGradient id="decor-fade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="471" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.1"/><stop offset="1" stop-color="#fff" stop-opacity="0.5"/></linearGradient>
+  <radialGradient id="decor-bloom"><stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <symbol id="decor-sweep" viewBox="0 0 471 257"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><path d="M-30 262C140 238 320 130 520 -20" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-30 262C139.9 238.1 320 130.2 520 -19.7" vector-effect="non-scaling-stroke" stroke-opacity="0.98"/><path d="M-30 262C139.8 238.2 319.9 130.7 520 -19.2" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M-30 262C139.7 238.4 319.8 131.3 520 -18.5" vector-effect="non-scaling-stroke" stroke-opacity="0.94"/><path d="M-30 262C139.5 238.6 319.7 132 520 -17.6" vector-effect="non-scaling-stroke" stroke-opacity="0.92"/><path d="M-30 262C139.3 238.9 319.6 132.8 520 -16.7" vector-effect="non-scaling-stroke" stroke-opacity="0.90"/><path d="M-30 262C139 239.2 319.5 133.7 520 -15.6" vector-effect="non-scaling-stroke" stroke-opacity="0.88"/><path d="M-30 262C138.8 239.5 319.4 134.6 520 -14.5" vector-effect="non-scaling-stroke" stroke-opacity="0.86"/><path d="M-30 262C138.5 239.8 319.3 135.6 520 -13.3" vector-effect="non-scaling-stroke" stroke-opacity="0.84"/><path d="M-30 262C138.2 240.1 319.1 136.7 520 -12" vector-effect="non-scaling-stroke" stroke-opacity="0.83"/><path d="M-30 262C137.9 240.5 319 137.9 520 -10.6" vector-effect="non-scaling-stroke" stroke-opacity="0.81"/><path d="M-30 262C137.6 240.9 318.8 139.1 520 -9.1" vector-effect="non-scaling-stroke" stroke-opacity="0.79"/><path d="M-30 262C137.2 241.3 318.6 140.3 520 -7.6" vector-effect="non-scaling-stroke" stroke-opacity="0.77"/><path d="M-30 262C136.9 241.7 318.4 141.6 520 -6" vector-effect="non-scaling-stroke" stroke-opacity="0.75"/><path d="M-30 262C136.5 242.2 318.3 143 520 -4.4" vector-effect="non-scaling-stroke" stroke-opacity="0.74"/><path d="M-30 262C136.2 242.6 318.1 144.4 520 -2.7" vector-effect="non-scaling-stroke" stroke-opacity="0.72"/><path d="M-30 262C135.8 243.1 317.9 145.9 520 -0.9" vector-effect="non-scaling-stroke" stroke-opacity="0.70"/><path d="M-30 262C135.4 243.6 317.7 147.4 520 0.9" vector-effect="non-scaling-stroke" stroke-opacity="0.68"/><path d="M-30 262C134.9 244.1 317.5 149 520 2.8" vector-effect="non-scaling-stroke" stroke-opacity="0.67"/><path d="M-30 262C134.5 244.6 317.3 150.6 520 4.7" vector-effect="non-scaling-stroke" stroke-opacity="0.65"/><path d="M-30 262C134.1 245.1 317 152.2 520 6.7" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-30 262C133.6 245.7 316.8 153.9 520 8.7" vector-effect="non-scaling-stroke" stroke-opacity="0.62"/><path d="M-30 262C133.2 246.2 316.6 155.6 520 10.8" vector-effect="non-scaling-stroke" stroke-opacity="0.60"/><path d="M-30 262C132.7 246.8 316.3 157.4 520 12.9" vector-effect="non-scaling-stroke" stroke-opacity="0.59"/><path d="M-30 262C132.2 247.3 316.1 159.2 520 15.1" vector-effect="non-scaling-stroke" stroke-opacity="0.57"/><path d="M-30 262C131.7 247.9 315.9 161.1 520 17.3" vector-effect="non-scaling-stroke" stroke-opacity="0.56"/><path d="M-30 262C131.2 248.5 315.6 162.9 520 19.5" vector-effect="non-scaling-stroke" stroke-opacity="0.54"/><path d="M-30 262C130.7 249.2 315.4 164.9 520 21.8" vector-effect="non-scaling-stroke" stroke-opacity="0.53"/><path d="M-30 262C130.2 249.8 315.1 166.8 520 24.2" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M-30 262C129.7 250.4 314.8 168.8 520 26.6" vector-effect="non-scaling-stroke" stroke-opacity="0.50"/><path d="M-30 262C129.1 251.1 314.6 170.8 520 29" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M-30 262C128.6 251.7 314.3 172.9 520 31.5" vector-effect="non-scaling-stroke" stroke-opacity="0.48"/><path d="M-30 262C128 252.4 314 175 520 34" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-30 262C127.4 253.1 313.7 177.1 520 36.5" vector-effect="non-scaling-stroke" stroke-opacity="0.45"/><path d="M-30 262C126.9 253.8 313.4 179.3 520 39.1" vector-effect="non-scaling-stroke" stroke-opacity="0.44"/><path d="M-30 262C126.3 254.5 313.1 181.4 520 41.7" vector-effect="non-scaling-stroke" stroke-opacity="0.43"/><path d="M-30 262C125.7 255.2 312.8 183.7 520 44.4" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M-30 262C125.1 255.9 312.5 185.9 520 47.1" vector-effect="non-scaling-stroke" stroke-opacity="0.41"/><path d="M-30 262C124.5 256.6 312.2 188.2 520 49.8" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-30 262C123.9 257.4 311.9 190.5 520 52.6" vector-effect="non-scaling-stroke" stroke-opacity="0.39"/><path d="M-30 262C123.2 258.1 311.6 192.9 520 55.4" vector-effect="non-scaling-stroke" stroke-opacity="0.38"/><path d="M-30 262C122.6 258.9 311.3 195.2 520 58.3" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-30 262C122 259.6 311 197.6 520 61.2" vector-effect="non-scaling-stroke" stroke-opacity="0.36"/><path d="M-30 262C121.3 260.4 310.7 200.1 520 64.1" vector-effect="non-scaling-stroke" stroke-opacity="0.36"/><path d="M-30 262C120.7 261.2 310.3 202.5 520 67" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-30 262C120 262 310 205 520 70" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M150 290C300 250 430 170 520 90" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M150 290C299.9 250.3 430 170.7 520 90.7" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M150 290C299.8 250.8 430 171.9 520 91.9" vector-effect="non-scaling-stroke" stroke-opacity="0.93"/><path d="M150 290C299.6 251.5 430 173.3 520 93.3" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M150 290C299.4 252.2 430 175 520 95" vector-effect="non-scaling-stroke" stroke-opacity="0.86"/><path d="M150 290C299.1 253 430 176.8 520 96.8" vector-effect="non-scaling-stroke" stroke-opacity="0.83"/><path d="M150 290C298.9 253.9 430 178.8 520 98.8" vector-effect="non-scaling-stroke" stroke-opacity="0.79"/><path d="M150 290C298.6 254.8 430 180.9 520 100.9" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M150 290C298.4 255.8 430 183.2 520 103.2" vector-effect="non-scaling-stroke" stroke-opacity="0.73"/><path d="M150 290C298.1 256.8 430 185.5 520 105.5" vector-effect="non-scaling-stroke" stroke-opacity="0.70"/><path d="M150 290C297.7 257.9 430 188 520 108" vector-effect="non-scaling-stroke" stroke-opacity="0.66"/><path d="M150 290C297.4 259 430 190.6 520 110.6" vector-effect="non-scaling-stroke" stroke-opacity="0.63"/><path d="M150 290C297.1 260.2 430 193.3 520 113.3" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M150 290C296.7 261.4 430 196 520 116" vector-effect="non-scaling-stroke" stroke-opacity="0.58"/><path d="M150 290C296.4 262.6 430 198.9 520 118.9" vector-effect="non-scaling-stroke" stroke-opacity="0.55"/><path d="M150 290C296 263.9 430 201.8 520 121.8" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M150 290C295.7 265.2 430 204.8 520 124.8" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M150 290C295.3 266.6 430 207.9 520 127.9" vector-effect="non-scaling-stroke" stroke-opacity="0.47"/><path d="M150 290C294.9 268 430 211 520 131" vector-effect="non-scaling-stroke" stroke-opacity="0.44"/><path d="M150 290C294.5 269.4 430 214.3 520 134.3" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M150 290C294.1 270.8 430 217.6 520 137.6" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M150 290C293.6 272.3 430 220.9 520 140.9" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M150 290C293.2 273.8 430 224.3 520 144.3" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M150 290C292.8 275.3 430 227.8 520 147.8" vector-effect="non-scaling-stroke" stroke-opacity="0.33"/><path d="M150 290C292.3 276.9 430 231.4 520 151.4" vector-effect="non-scaling-stroke" stroke-opacity="0.31"/><path d="M150 290C291.9 278.4 430 235 520 155" vector-effect="non-scaling-stroke" stroke-opacity="0.30"/><path d="M150 290C291.4 280 430 238.7 520 158.7" vector-effect="non-scaling-stroke" stroke-opacity="0.28"/><path d="M150 290C291 281.7 430 242.4 520 162.4" vector-effect="non-scaling-stroke" stroke-opacity="0.27"/><path d="M150 290C290.5 283.3 430 246.2 520 166.2" vector-effect="non-scaling-stroke" stroke-opacity="0.26"/><path d="M150 290C290 285 430 250 520 170" vector-effect="non-scaling-stroke" stroke-opacity="0.25"/></g></symbol>
+  <symbol id="decor-veil" viewBox="0 0 471 257"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><path d="M-20 60C150 10 300 150 500 70" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-20 61.5C150.2 12.1 300.2 151.6 500 72.1" vector-effect="non-scaling-stroke" stroke-opacity="0.99"/><path d="M-20 63C150.3 14.3 300.3 153.3 500 74.3" vector-effect="non-scaling-stroke" stroke-opacity="0.97"/><path d="M-20 64.4C150.5 16.4 300.5 154.9 500 76.4" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M-20 65.9C150.7 18.5 300.7 156.6 500 78.5" vector-effect="non-scaling-stroke" stroke-opacity="0.95"/><path d="M-20 67.4C150.8 20.7 300.8 158.2 500 80.7" vector-effect="non-scaling-stroke" stroke-opacity="0.94"/><path d="M-20 68.9C151 22.8 301 159.8 500 82.8" vector-effect="non-scaling-stroke" stroke-opacity="0.92"/><path d="M-20 70.3C151.1 24.9 301.1 161.5 500 84.9" vector-effect="non-scaling-stroke" stroke-opacity="0.91"/><path d="M-20 71.8C151.3 27 301.3 163.1 500 87" vector-effect="non-scaling-stroke" stroke-opacity="0.90"/><path d="M-20 73.3C151.5 29.2 301.5 164.8 500 89.2" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M-20 74.8C151.6 31.3 301.6 166.4 500 91.3" vector-effect="non-scaling-stroke" stroke-opacity="0.87"/><path d="M-20 76.2C151.8 33.4 301.8 168 500 93.4" vector-effect="non-scaling-stroke" stroke-opacity="0.86"/><path d="M-20 77.7C152 35.6 302 169.7 500 95.6" vector-effect="non-scaling-stroke" stroke-opacity="0.85"/><path d="M-20 79.2C152.1 37.7 302.1 171.3 500 97.7" vector-effect="non-scaling-stroke" stroke-opacity="0.84"/><path d="M-20 80.7C152.3 39.8 302.3 173 500 99.8" vector-effect="non-scaling-stroke" stroke-opacity="0.83"/><path d="M-20 82.1C152.5 42 302.5 174.6 500 102" vector-effect="non-scaling-stroke" stroke-opacity="0.81"/><path d="M-20 83.6C152.6 44.1 302.6 176.2 500 104.1" vector-effect="non-scaling-stroke" stroke-opacity="0.80"/><path d="M-20 85.1C152.8 46.2 302.8 177.9 500 106.2" vector-effect="non-scaling-stroke" stroke-opacity="0.79"/><path d="M-20 86.6C153 48.4 303 179.5 500 108.4" vector-effect="non-scaling-stroke" stroke-opacity="0.78"/><path d="M-20 88C153.1 50.5 303.1 181.1 500 110.5" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M-20 89.5C153.3 52.6 303.3 182.8 500 112.6" vector-effect="non-scaling-stroke" stroke-opacity="0.75"/><path d="M-20 91C153.4 54.8 303.4 184.4 500 114.8" vector-effect="non-scaling-stroke" stroke-opacity="0.74"/><path d="M-20 92.5C153.6 56.9 303.6 186.1 500 116.9" vector-effect="non-scaling-stroke" stroke-opacity="0.73"/><path d="M-20 93.9C153.8 59 303.8 187.7 500 119" vector-effect="non-scaling-stroke" stroke-opacity="0.72"/><path d="M-20 95.4C153.9 61.1 303.9 189.3 500 121.1" vector-effect="non-scaling-stroke" stroke-opacity="0.70"/><path d="M-20 96.9C154.1 63.3 304.1 191 500 123.3" vector-effect="non-scaling-stroke" stroke-opacity="0.69"/><path d="M-20 98.4C154.3 65.4 304.3 192.6 500 125.4" vector-effect="non-scaling-stroke" stroke-opacity="0.68"/><path d="M-20 99.8C154.4 67.5 304.4 194.3 500 127.5" vector-effect="non-scaling-stroke" stroke-opacity="0.67"/><path d="M-20 101.3C154.6 69.7 304.6 195.9 500 129.7" vector-effect="non-scaling-stroke" stroke-opacity="0.66"/><path d="M-20 102.8C154.8 71.8 304.8 197.5 500 131.8" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-20 104.3C154.9 73.9 304.9 199.2 500 133.9" vector-effect="non-scaling-stroke" stroke-opacity="0.63"/><path d="M-20 105.7C155.1 76.1 305.1 200.8 500 136.1" vector-effect="non-scaling-stroke" stroke-opacity="0.62"/><path d="M-20 107.2C155.2 78.2 305.2 202.5 500 138.2" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M-20 108.7C155.4 80.3 305.4 204.1 500 140.3" vector-effect="non-scaling-stroke" stroke-opacity="0.60"/><path d="M-20 110.2C155.6 82.5 305.6 205.7 500 142.5" vector-effect="non-scaling-stroke" stroke-opacity="0.59"/><path d="M-20 111.6C155.7 84.6 305.7 207.4 500 144.6" vector-effect="non-scaling-stroke" stroke-opacity="0.57"/><path d="M-20 113.1C155.9 86.7 305.9 209 500 146.7" vector-effect="non-scaling-stroke" stroke-opacity="0.56"/><path d="M-20 114.6C156.1 88.9 306.1 210.7 500 148.9" vector-effect="non-scaling-stroke" stroke-opacity="0.55"/><path d="M-20 116.1C156.2 91 306.2 212.3 500 151" vector-effect="non-scaling-stroke" stroke-opacity="0.54"/><path d="M-20 117.5C156.4 93.1 306.4 213.9 500 153.1" vector-effect="non-scaling-stroke" stroke-opacity="0.53"/><path d="M-20 119C156.6 95.2 306.6 215.6 500 155.2" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M-20 120.5C156.7 97.4 306.7 217.2 500 157.4" vector-effect="non-scaling-stroke" stroke-opacity="0.51"/><path d="M-20 122C156.9 99.5 306.9 218.9 500 159.5" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M-20 123.4C157 101.6 307 220.5 500 161.6" vector-effect="non-scaling-stroke" stroke-opacity="0.48"/><path d="M-20 124.9C157.2 103.8 307.2 222.1 500 163.8" vector-effect="non-scaling-stroke" stroke-opacity="0.47"/><path d="M-20 126.4C157.4 105.9 307.4 223.8 500 165.9" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-20 127.9C157.5 108 307.5 225.4 500 168" vector-effect="non-scaling-stroke" stroke-opacity="0.45"/><path d="M-20 129.3C157.7 110.2 307.7 227 500 170.2" vector-effect="non-scaling-stroke" stroke-opacity="0.44"/><path d="M-20 130.8C157.9 112.3 307.9 228.7 500 172.3" vector-effect="non-scaling-stroke" stroke-opacity="0.43"/><path d="M-20 132.3C158 114.4 308 230.3 500 174.4" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M-20 133.8C158.2 116.6 308.2 232 500 176.6" vector-effect="non-scaling-stroke" stroke-opacity="0.41"/><path d="M-20 135.2C158.4 118.7 308.4 233.6 500 178.7" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-20 136.7C158.5 120.8 308.5 235.2 500 180.8" vector-effect="non-scaling-stroke" stroke-opacity="0.39"/><path d="M-20 138.2C158.7 123 308.7 236.9 500 183" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-20 139.7C158.9 125.1 308.9 238.5 500 185.1" vector-effect="non-scaling-stroke" stroke-opacity="0.36"/><path d="M-20 141.1C159 127.2 309 240.2 500 187.2" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-20 142.6C159.2 129.3 309.2 241.8 500 189.3" vector-effect="non-scaling-stroke" stroke-opacity="0.34"/><path d="M-20 144.1C159.3 131.5 309.3 243.4 500 191.5" vector-effect="non-scaling-stroke" stroke-opacity="0.33"/><path d="M-20 145.6C159.5 133.6 309.5 245.1 500 193.6" vector-effect="non-scaling-stroke" stroke-opacity="0.33"/><path d="M-20 147C159.7 135.7 309.7 246.7 500 195.7" vector-effect="non-scaling-stroke" stroke-opacity="0.32"/><path d="M-20 148.5C159.8 137.9 309.8 248.4 500 197.9" vector-effect="non-scaling-stroke" stroke-opacity="0.31"/><path d="M-20 150C160 140 310 250 500 200" vector-effect="non-scaling-stroke" stroke-opacity="0.30"/></g></symbol>
+  <symbol id="decor-twist" viewBox="0 0 471 257"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><path d="M-20 40C160 40 300 230 500 230" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-20 43.7C160 43.7 300 225.1 500 225.1" vector-effect="non-scaling-stroke" stroke-opacity="0.98"/><path d="M-20 47.4C160 47.4 300 220.2 500 220.2" vector-effect="non-scaling-stroke" stroke-opacity="0.97"/><path d="M-20 51.2C160 51.2 300 215.3 500 215.3" vector-effect="non-scaling-stroke" stroke-opacity="0.95"/><path d="M-20 54.9C160 54.9 300 210.5 500 210.5" vector-effect="non-scaling-stroke" stroke-opacity="0.93"/><path d="M-20 58.6C160 58.6 300 205.6 500 205.6" vector-effect="non-scaling-stroke" stroke-opacity="0.92"/><path d="M-20 62.3C160 62.3 300 200.7 500 200.7" vector-effect="non-scaling-stroke" stroke-opacity="0.90"/><path d="M-20 66C160 66 300 195.8 500 195.8" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M-20 69.8C160 69.8 300 190.9 500 190.9" vector-effect="non-scaling-stroke" stroke-opacity="0.87"/><path d="M-20 73.5C160 73.5 300 186 500 186" vector-effect="non-scaling-stroke" stroke-opacity="0.85"/><path d="M-20 77.2C160 77.2 300 181.2 500 181.2" vector-effect="non-scaling-stroke" stroke-opacity="0.84"/><path d="M-20 80.9C160 80.9 300 176.3 500 176.3" vector-effect="non-scaling-stroke" stroke-opacity="0.82"/><path d="M-20 84.7C160 84.7 300 171.4 500 171.4" vector-effect="non-scaling-stroke" stroke-opacity="0.80"/><path d="M-20 88.4C160 88.4 300 166.5 500 166.5" vector-effect="non-scaling-stroke" stroke-opacity="0.79"/><path d="M-20 92.1C160 92.1 300 161.6 500 161.6" vector-effect="non-scaling-stroke" stroke-opacity="0.77"/><path d="M-20 95.8C160 95.8 300 156.7 500 156.7" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M-20 99.5C160 99.5 300 151.9 500 151.9" vector-effect="non-scaling-stroke" stroke-opacity="0.74"/><path d="M-20 103.3C160 103.3 300 147 500 147" vector-effect="non-scaling-stroke" stroke-opacity="0.72"/><path d="M-20 107C160 107 300 142.1 500 142.1" vector-effect="non-scaling-stroke" stroke-opacity="0.71"/><path d="M-20 110.7C160 110.7 300 137.2 500 137.2" vector-effect="non-scaling-stroke" stroke-opacity="0.69"/><path d="M-20 114.4C160 114.4 300 132.3 500 132.3" vector-effect="non-scaling-stroke" stroke-opacity="0.67"/><path d="M-20 118.1C160 118.1 300 127.4 500 127.4" vector-effect="non-scaling-stroke" stroke-opacity="0.66"/><path d="M-20 121.9C160 121.9 300 122.6 500 122.6" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-20 125.6C160 125.6 300 117.7 500 117.7" vector-effect="non-scaling-stroke" stroke-opacity="0.63"/><path d="M-20 129.3C160 129.3 300 112.8 500 112.8" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M-20 133C160 133 300 107.9 500 107.9" vector-effect="non-scaling-stroke" stroke-opacity="0.59"/><path d="M-20 136.7C160 136.7 300 103 500 103" vector-effect="non-scaling-stroke" stroke-opacity="0.58"/><path d="M-20 140.5C160 140.5 300 98.1 500 98.1" vector-effect="non-scaling-stroke" stroke-opacity="0.56"/><path d="M-20 144.2C160 144.2 300 93.3 500 93.3" vector-effect="non-scaling-stroke" stroke-opacity="0.54"/><path d="M-20 147.9C160 147.9 300 88.4 500 88.4" vector-effect="non-scaling-stroke" stroke-opacity="0.53"/><path d="M-20 151.6C160 151.6 300 83.5 500 83.5" vector-effect="non-scaling-stroke" stroke-opacity="0.51"/><path d="M-20 155.3C160 155.3 300 78.6 500 78.6" vector-effect="non-scaling-stroke" stroke-opacity="0.50"/><path d="M-20 159.1C160 159.1 300 73.7 500 73.7" vector-effect="non-scaling-stroke" stroke-opacity="0.48"/><path d="M-20 162.8C160 162.8 300 68.8 500 68.8" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-20 166.5C160 166.5 300 64 500 64" vector-effect="non-scaling-stroke" stroke-opacity="0.45"/><path d="M-20 170.2C160 170.2 300 59.1 500 59.1" vector-effect="non-scaling-stroke" stroke-opacity="0.43"/><path d="M-20 174C160 174 300 54.2 500 54.2" vector-effect="non-scaling-stroke" stroke-opacity="0.41"/><path d="M-20 177.7C160 177.7 300 49.3 500 49.3" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-20 181.4C160 181.4 300 44.4 500 44.4" vector-effect="non-scaling-stroke" stroke-opacity="0.38"/><path d="M-20 185.1C160 185.1 300 39.5 500 39.5" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-20 188.8C160 188.8 300 34.7 500 34.7" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-20 192.6C160 192.6 300 29.8 500 29.8" vector-effect="non-scaling-stroke" stroke-opacity="0.33"/><path d="M-20 196.3C160 196.3 300 24.9 500 24.9" vector-effect="non-scaling-stroke" stroke-opacity="0.32"/><path d="M-20 200C160 200 300 20 500 20" vector-effect="non-scaling-stroke" stroke-opacity="0.30"/></g></symbol>
+  <symbol id="decor-cascade" viewBox="0 0 471 257"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><path d="M-20 30C170 0 330 90 500 150" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-20 30.5C170.2 0.9 330.2 90.6 500 150.7" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M-20 31.3C170.4 2.2 330.4 91.5 500 151.6" vector-effect="non-scaling-stroke" stroke-opacity="0.92"/><path d="M-20 32.2C170.6 3.8 330.6 92.5 500 152.8" vector-effect="non-scaling-stroke" stroke-opacity="0.88"/><path d="M-20 33.1C170.9 5.5 330.9 93.7 500 154.1" vector-effect="non-scaling-stroke" stroke-opacity="0.84"/><path d="M-20 34.2C171.2 7.4 331.2 94.9 500 155.4" vector-effect="non-scaling-stroke" stroke-opacity="0.80"/><path d="M-20 35.3C171.6 9.4 331.6 96.3 500 156.9" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M-20 36.5C171.9 11.5 331.9 97.6 500 158.4" vector-effect="non-scaling-stroke" stroke-opacity="0.72"/><path d="M-20 37.7C172.3 13.6 332.3 99.1 500 160" vector-effect="non-scaling-stroke" stroke-opacity="0.69"/><path d="M-20 39C172.6 15.9 332.6 100.6 500 161.7" vector-effect="non-scaling-stroke" stroke-opacity="0.65"/><path d="M-20 40.3C173 18.2 333 102.2 500 163.4" vector-effect="non-scaling-stroke" stroke-opacity="0.62"/><path d="M-20 41.7C173.4 20.6 333.4 103.8 500 165.1" vector-effect="non-scaling-stroke" stroke-opacity="0.58"/><path d="M-20 43.1C173.9 23.1 333.9 105.4 500 166.9" vector-effect="non-scaling-stroke" stroke-opacity="0.55"/><path d="M-20 44.5C174.3 25.6 334.3 107.1 500 168.8" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M-20 46C174.7 28.2 334.7 108.8 500 170.7" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M-20 47.5C175.1 30.9 335.1 110.6 500 172.6" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-20 49C175.6 33.6 335.6 112.4 500 174.6" vector-effect="non-scaling-stroke" stroke-opacity="0.43"/><path d="M-20 50.6C176.1 36.3 336.1 114.2 500 176.7" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-20 52.2C176.5 39.1 336.5 116.1 500 178.7" vector-effect="non-scaling-stroke" stroke-opacity="0.38"/><path d="M-20 53.8C177 42 337 118 500 180.8" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-20 55.4C177.5 44.9 337.5 119.9 500 182.9" vector-effect="non-scaling-stroke" stroke-opacity="0.33"/><path d="M-20 57.1C178 47.8 338 121.9 500 185.1" vector-effect="non-scaling-stroke" stroke-opacity="0.31"/><path d="M-20 58.8C178.5 50.8 338.5 123.9 500 187.3" vector-effect="non-scaling-stroke" stroke-opacity="0.29"/><path d="M-20 60.5C179 53.8 339 125.9 500 189.5" vector-effect="non-scaling-stroke" stroke-opacity="0.27"/><path d="M-20 62.2C179.5 56.9 339.5 127.9 500 191.7" vector-effect="non-scaling-stroke" stroke-opacity="0.26"/><path d="M-20 64C180 60 340 130 500 194" vector-effect="non-scaling-stroke" stroke-opacity="0.25"/><path d="M-20 90C170 60 330 140 500 200" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-20 90.5C170.2 60.9 330.2 140.6 500 200.7" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M-20 91.3C170.4 62.2 330.4 141.5 500 201.6" vector-effect="non-scaling-stroke" stroke-opacity="0.92"/><path d="M-20 92.2C170.6 63.8 330.6 142.5 500 202.8" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M-20 93.1C170.9 65.5 330.9 143.7 500 204.1" vector-effect="non-scaling-stroke" stroke-opacity="0.85"/><path d="M-20 94.2C171.2 67.4 331.2 144.9 500 205.4" vector-effect="non-scaling-stroke" stroke-opacity="0.81"/><path d="M-20 95.3C171.6 69.4 331.6 146.3 500 206.9" vector-effect="non-scaling-stroke" stroke-opacity="0.78"/><path d="M-20 96.5C171.9 71.5 331.9 147.6 500 208.4" vector-effect="non-scaling-stroke" stroke-opacity="0.74"/><path d="M-20 97.7C172.3 73.6 332.3 149.1 500 210" vector-effect="non-scaling-stroke" stroke-opacity="0.71"/><path d="M-20 99C172.6 75.9 332.6 150.6 500 211.7" vector-effect="non-scaling-stroke" stroke-opacity="0.67"/><path d="M-20 100.3C173 78.2 333 152.2 500 213.4" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-20 101.7C173.4 80.6 333.4 153.8 500 215.1" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M-20 103.1C173.9 83.1 333.9 155.4 500 216.9" vector-effect="non-scaling-stroke" stroke-opacity="0.58"/><path d="M-20 104.5C174.3 85.6 334.3 157.1 500 218.8" vector-effect="non-scaling-stroke" stroke-opacity="0.55"/><path d="M-20 106C174.7 88.2 334.7 158.8 500 220.7" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M-20 107.5C175.1 90.9 335.1 160.6 500 222.6" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M-20 109C175.6 93.6 335.6 162.4 500 224.6" vector-effect="non-scaling-stroke" stroke-opacity="0.47"/><path d="M-20 110.6C176.1 96.3 336.1 164.2 500 226.7" vector-effect="non-scaling-stroke" stroke-opacity="0.44"/><path d="M-20 112.2C176.5 99.1 336.5 166.1 500 228.7" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M-20 113.8C177 102 337 168 500 230.8" vector-effect="non-scaling-stroke" stroke-opacity="0.39"/><path d="M-20 115.4C177.5 104.9 337.5 169.9 500 232.9" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-20 117.1C178 107.8 338 171.9 500 235.1" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-20 118.8C178.5 110.8 338.5 173.9 500 237.3" vector-effect="non-scaling-stroke" stroke-opacity="0.34"/><path d="M-20 120.5C179 113.8 339 175.9 500 239.5" vector-effect="non-scaling-stroke" stroke-opacity="0.32"/><path d="M-20 122.2C179.5 116.9 339.5 177.9 500 241.7" vector-effect="non-scaling-stroke" stroke-opacity="0.31"/><path d="M-20 124C180 120 340 180 500 244" vector-effect="non-scaling-stroke" stroke-opacity="0.30"/><path d="M-20 150C170 120 330 190 500 250" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-20 150.5C170.2 120.9 330.2 190.6 500 250.7" vector-effect="non-scaling-stroke" stroke-opacity="0.96"/><path d="M-20 151.3C170.4 122.2 330.4 191.5 500 251.6" vector-effect="non-scaling-stroke" stroke-opacity="0.93"/><path d="M-20 152.2C170.6 123.8 330.6 192.5 500 252.8" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M-20 153.1C170.9 125.5 330.9 193.7 500 254.1" vector-effect="non-scaling-stroke" stroke-opacity="0.86"/><path d="M-20 154.2C171.2 127.4 331.2 194.9 500 255.4" vector-effect="non-scaling-stroke" stroke-opacity="0.83"/><path d="M-20 155.3C171.6 129.4 331.6 196.3 500 256.9" vector-effect="non-scaling-stroke" stroke-opacity="0.79"/><path d="M-20 156.5C171.9 131.5 331.9 197.6 500 258.4" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M-20 157.7C172.3 133.6 332.3 199.1 500 260" vector-effect="non-scaling-stroke" stroke-opacity="0.73"/><path d="M-20 159C172.6 135.9 332.6 200.6 500 261.7" vector-effect="non-scaling-stroke" stroke-opacity="0.70"/><path d="M-20 160.3C173 138.2 333 202.2 500 263.4" vector-effect="non-scaling-stroke" stroke-opacity="0.67"/><path d="M-20 161.7C173.4 140.6 333.4 203.8 500 265.1" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-20 163.1C173.9 143.1 333.9 205.4 500 266.9" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M-20 164.5C174.3 145.6 334.3 207.1 500 268.8" vector-effect="non-scaling-stroke" stroke-opacity="0.58"/><path d="M-20 166C174.7 148.2 334.7 208.8 500 270.7" vector-effect="non-scaling-stroke" stroke-opacity="0.56"/><path d="M-20 167.5C175.1 150.9 335.1 210.6 500 272.6" vector-effect="non-scaling-stroke" stroke-opacity="0.53"/><path d="M-20 169C175.6 153.6 335.6 212.4 500 274.6" vector-effect="non-scaling-stroke" stroke-opacity="0.51"/><path d="M-20 170.6C176.1 156.3 336.1 214.2 500 276.7" vector-effect="non-scaling-stroke" stroke-opacity="0.48"/><path d="M-20 172.2C176.5 159.1 336.5 216.1 500 278.7" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-20 173.8C177 162 337 218 500 280.8" vector-effect="non-scaling-stroke" stroke-opacity="0.44"/><path d="M-20 175.4C177.5 164.9 337.5 219.9 500 282.9" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M-20 177.1C178 167.8 338 221.9 500 285.1" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-20 178.8C178.5 170.8 338.5 223.9 500 287.3" vector-effect="non-scaling-stroke" stroke-opacity="0.38"/><path d="M-20 180.5C179 173.8 339 225.9 500 289.5" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-20 182.2C179.5 176.9 339.5 227.9 500 291.7" vector-effect="non-scaling-stroke" stroke-opacity="0.36"/><path d="M-20 184C180 180 340 230 500 294" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/></g></symbol>
+  <symbol id="decor-glow" viewBox="0 0 471 257"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><ellipse cx="360" cy="230" rx="210" ry="120" fill="url(#decor-bloom)" stroke="none"/><path d="M-30 262C150 235 330 120 520 -20" vector-effect="non-scaling-stroke" stroke-opacity="1.00"/><path d="M-30 262C149.9 235.1 330 120.3 520 -19.7" vector-effect="non-scaling-stroke" stroke-opacity="0.98"/><path d="M-30 262C149.8 235.3 329.9 120.9 520 -19.1" vector-effect="non-scaling-stroke" stroke-opacity="0.95"/><path d="M-30 262C149.6 235.6 329.8 121.7 520 -18.3" vector-effect="non-scaling-stroke" stroke-opacity="0.93"/><path d="M-30 262C149.3 235.9 329.7 122.6 520 -17.4" vector-effect="non-scaling-stroke" stroke-opacity="0.91"/><path d="M-30 262C149.1 236.2 329.5 123.7 520 -16.3" vector-effect="non-scaling-stroke" stroke-opacity="0.89"/><path d="M-30 262C148.8 236.6 329.4 124.8 520 -15.2" vector-effect="non-scaling-stroke" stroke-opacity="0.86"/><path d="M-30 262C148.5 237.1 329.2 126.1 520 -13.9" vector-effect="non-scaling-stroke" stroke-opacity="0.84"/><path d="M-30 262C148.1 237.5 329.1 127.4 520 -12.6" vector-effect="non-scaling-stroke" stroke-opacity="0.82"/><path d="M-30 262C147.8 238 328.9 128.9 520 -11.1" vector-effect="non-scaling-stroke" stroke-opacity="0.80"/><path d="M-30 262C147.4 238.5 328.7 130.4 520 -9.6" vector-effect="non-scaling-stroke" stroke-opacity="0.78"/><path d="M-30 262C147 239 328.5 132 520 -8" vector-effect="non-scaling-stroke" stroke-opacity="0.76"/><path d="M-30 262C146.6 239.6 328.3 133.7 520 -6.3" vector-effect="non-scaling-stroke" stroke-opacity="0.74"/><path d="M-30 262C146.2 240.2 328.1 135.4 520 -4.6" vector-effect="non-scaling-stroke" stroke-opacity="0.72"/><path d="M-30 262C145.7 240.8 327.8 137.2 520 -2.8" vector-effect="non-scaling-stroke" stroke-opacity="0.70"/><path d="M-30 262C145.2 241.4 327.6 139.1 520 -0.9" vector-effect="non-scaling-stroke" stroke-opacity="0.68"/><path d="M-30 262C144.7 242.1 327.4 141 520 1" vector-effect="non-scaling-stroke" stroke-opacity="0.66"/><path d="M-30 262C144.2 242.8 327.1 143 520 3" vector-effect="non-scaling-stroke" stroke-opacity="0.64"/><path d="M-30 262C143.7 243.5 326.9 145.1 520 5.1" vector-effect="non-scaling-stroke" stroke-opacity="0.62"/><path d="M-30 262C143.2 244.2 326.6 147.2 520 7.2" vector-effect="non-scaling-stroke" stroke-opacity="0.61"/><path d="M-30 262C142.7 244.9 326.3 149.4 520 9.4" vector-effect="non-scaling-stroke" stroke-opacity="0.59"/><path d="M-30 262C142.1 245.7 326 151.6 520 11.6" vector-effect="non-scaling-stroke" stroke-opacity="0.57"/><path d="M-30 262C141.5 246.4 325.8 153.9 520 13.9" vector-effect="non-scaling-stroke" stroke-opacity="0.55"/><path d="M-30 262C140.9 247.2 325.5 156.2 520 16.2" vector-effect="non-scaling-stroke" stroke-opacity="0.54"/><path d="M-30 262C140.3 248 325.2 158.6 520 18.6" vector-effect="non-scaling-stroke" stroke-opacity="0.52"/><path d="M-30 262C139.7 248.9 324.9 161.1 520 21.1" vector-effect="non-scaling-stroke" stroke-opacity="0.50"/><path d="M-30 262C139.1 249.7 324.6 163.5 520 23.5" vector-effect="non-scaling-stroke" stroke-opacity="0.49"/><path d="M-30 262C138.5 250.6 324.2 166.1 520 26.1" vector-effect="non-scaling-stroke" stroke-opacity="0.47"/><path d="M-30 262C137.8 251.4 323.9 168.7 520 28.7" vector-effect="non-scaling-stroke" stroke-opacity="0.46"/><path d="M-30 262C137.2 252.3 323.6 171.3 520 31.3" vector-effect="non-scaling-stroke" stroke-opacity="0.45"/><path d="M-30 262C136.5 253.2 323.3 174 520 34" vector-effect="non-scaling-stroke" stroke-opacity="0.43"/><path d="M-30 262C135.8 254.1 322.9 176.7 520 36.7" vector-effect="non-scaling-stroke" stroke-opacity="0.42"/><path d="M-30 262C135.1 255.1 322.6 179.5 520 39.5" vector-effect="non-scaling-stroke" stroke-opacity="0.41"/><path d="M-30 262C134.4 256 322.2 182.3 520 42.3" vector-effect="non-scaling-stroke" stroke-opacity="0.40"/><path d="M-30 262C133.7 257 321.9 185.1 520 45.1" vector-effect="non-scaling-stroke" stroke-opacity="0.39"/><path d="M-30 262C133 258 321.5 188 520 48" vector-effect="non-scaling-stroke" stroke-opacity="0.38"/><path d="M-30 262C132.3 258.9 321.1 190.9 520 50.9" vector-effect="non-scaling-stroke" stroke-opacity="0.37"/><path d="M-30 262C131.5 259.9 320.8 193.9 520 53.9" vector-effect="non-scaling-stroke" stroke-opacity="0.36"/><path d="M-30 262C130.8 261 320.4 196.9 520 56.9" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/><path d="M-30 262C130 262 320 200 520 60" vector-effect="non-scaling-stroke" stroke-opacity="0.35"/></g></symbol>
+  <symbol id="arcs" viewBox="0 0 471 257"><ellipse cx="230" cy="128.5" rx="135.5" ry="128"/><ellipse cx="290" cy="128.5" rx="135.5" ry="128"/><ellipse cx="335" cy="128.5" rx="135.5" ry="128"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></symbol>
+</svg>
+
+<div class="shell">
+  <nav class="nav" aria-label="Sections">
+    <div class="nav-title">Spotify-developed GOMMA<small>Global base design system</small></div>
+    <a href="#separation">Separation logic</a>
+    <a href="#color">Color</a>
+    <a href="#brand-ramps">Brand ramps</a>
+    <a href="#pairs">Surface and ink</a>
+    <a href="#texture">Tint and texture</a>
+    <a href="#decor">Decorative lines</a>
+    <a href="#type">Typography</a>
+    <a href="#scales">Spacing and radius</a>
+    <a href="#components">Components</a>
+    <a href="#layout">Layout</a>
+    <a href="#voice">Voice</a>
+    <a href="#start">Start a project</a>
+    <a href="#tokens">CSS tokens</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Global base v1</p>
+        <h1>Spotify-<br>developed<br>GOMMA</h1>
+        <p>A reusable base for any project. Dark panels on near-black, white pills, decoration reserved for the one promo or CTA surface in a view. Structure comes from fill steps and gaps, never from borders or shadows.</p>
+        <div class="meta"><span class="tag">1 theme: dark</span><span class="tag">5 surface steps</span><span class="tag">3 highlight tints</span><span class="tag">0 borders on surfaces</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="surface arcs"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg></div>
+        <div class="surface blue arcs"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg></div>
+        <div class="surface teal arcs"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg></div>
+        <div style="background:var(--bg-highlight)"></div>
+      </div>
+    </header>
+
+    <section class="panel" id="separation">
+      <h2>Separation without borders</h2>
+      <p class="lede">The Spotify web player separates every surface with a one-step lighter fill and a black gap. GOMMA takes the same logic. A typical generated dark UI outlines every card, adds a shadow and puts a hairline between sections; none of those appear here.</p>
+      <div class="compare">
+        <div class="stage ai">
+          <p class="stage-label">Typical generated dark UI</p>
+          <div class="ai-input"></div>
+          <div class="ai-card"><div class="line w"></div><div class="line s"></div></div>
+          <div class="ai-card"><div class="line w"></div><div class="line s"></div></div>
+          <div class="count"><div><b>5</b>borders</div><div><b>2</b>shadows</div><div><b>1</b>divider rule</div></div>
+        </div>
+        <div class="stage lp">
+          <p class="stage-label">GOMMA portal</p>
+          <div class="lp-main">
+            <div class="lp-input"></div>
+            <div class="lp-card"><div class="line w"></div><div class="line s"></div></div>
+            <div class="lp-card"><div class="line w"></div><div class="line s"></div></div>
+          </div>
+          <div class="count"><div><b>0</b>borders</div><div><b>0</b>shadows</div><div><b>8px</b>gap does the dividing</div></div>
+        </div>
+      </div>
+
+      <h3>What replaces each line</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Typical generated UI</th><th>GOMMA portal</th></tr></thead>
+          <tbody>
+            <tr><td>1px grey border around every card</td><td>No border. The card is one step lighter than its parent.</td></tr>
+            <tr><td>Soft drop shadow to lift cards</td><td>No shadow. Lift is a lighter fill.</td></tr>
+            <tr><td>Bordered inputs</td><td>Search is a filled pill on <code>bg-highlight</code>. No outline at rest.</td></tr>
+            <tr><td>Hairline between table rows</td><td>Alternate rows step up one fill. No row rules.</td></tr>
+            <tr><td>Hover adds or darkens a border</td><td>Hover steps the fill up one level and brightens text.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The five rules</h3>
+      <div class="rules">
+        <div class="rule"><div class="n">1</div><h4>Lighter means closer</h4><p>Each surface sits one step above its parent on the ramp. Never the same fill, never two steps.</p></div>
+        <div class="rule"><div class="n">2</div><h4>The gap is the divider</h4><p>Navbar, header, cards and panels float on <code>bg-base</code> with an 8px gap. The ground showing through is the rule.</p></div>
+        <div class="rule"><div class="n">3</div><h4>Decoration marks the highlight</h4><p>Tint, sheen and arcs appear only on a promo or CTA surface, one per view. KPIs, tables, forms and nav stay plain.</p></div>
+        <div class="rule"><div class="n">4</div><h4>Interaction is a fill change</h4><p>Hover moves the fill up one step. Buttons scale to 1.04. The one hard line is the 3px white focus ring.</p></div>
+        <div class="rule"><div class="n">5</div><h4>An outline means optional</h4><p>The 1px <code>border-essential</code> outline marks low-priority controls such as the language chip. It is never a surface edge.</p></div>
+      </div>
+
+      <h3>The nesting ramp, live</h3>
+      <div class="nest">
+        <div><code>bg-elevated #1c1c1e &middot; panel, navbar</code>
+          <div><code>bg-highlight #252528 &middot; search, resting cards, table zebra</code>
+            <div><code>bg-press #2f2f33 &middot; hover, menus</code>
+              <div><code>bg-tinted #3f3f43 &middot; strongest fill</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Applying it</h3>
+      <ul class="apply">
+        <li><b>New surface:</b> take the parent's token and go one step up. Stop there.</li>
+        <li><b>Two items on the same level:</b> separate them with <code>space-2</code> or more, not a line.</li>
+        <li><b>Tempted to add a border:</b> raise the fill one step or widen the gap instead.</li>
+        <li><b>Tempted to decorate a card:</b> ask whether it is the promo or CTA. If not, leave it a plain fill.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="color">
+      <h2>Color</h2>
+      <p class="lede">One dark theme. A five-step neutral ramp does the structural work. Blue text is for links only; the tints belong to highlight surfaces.</p>
+      <h3>Surface ramp</h3>
+      <div class="ramp">
+        <div style="background:var(--bg-base)"><span class="lvl">0</span><div><b>bg-base</b><br><span>#0c0c0c &middot; app ground</span></div></div>
+        <div style="background:var(--bg-elevated)"><span class="lvl">1</span><div><b>bg-elevated</b><br><span>#1c1c1e &middot; panels, navbar</span></div></div>
+        <div style="background:var(--bg-highlight)"><span class="lvl">2</span><div><b>bg-highlight</b><br><span>#252528 &middot; search, zebra</span></div></div>
+        <div style="background:var(--bg-press)"><span class="lvl">3</span><div><b>bg-press</b><br><span>#2f2f33 &middot; hover, menus</span></div></div>
+        <div style="background:var(--bg-tinted)"><span class="lvl">4</span><div><b>bg-tinted</b><br><span>#3f3f43 &middot; strongest</span></div></div>
+      </div>
+      <h3>Text and support</h3>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:var(--text-base)"></div><div class="info"><b>text-base</b><code>#fafafa</code><p>Titles, values, active nav, hover text.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--text-subdued)"></div><div class="info"><b>text-subdued</b><code>#a1a1aa</code><p>Resting body, labels, captions, table headers.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--text-muted)"></div><div class="info"><b>text-muted</b><code>#71717a</code><p>Footnotes only. Below 4.5:1 on panels.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--accent)"></div><div class="info"><b>accent</b><code>#60a5fa</code><p>Row actions such as Edit, links. Not for buttons.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--inverted)"></div><div class="info"><b>inverted</b><code>#fafafa</code><p>Primary pill fill. Text on it is #09090b.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--border-essential)"></div><div class="info"><b>border-essential</b><code>#7c7c82</code><p>The only border: outline pills.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--warning-bg)"></div><div class="info"><b>warning</b><code>#433f0b / #fde68a</code><p>Warning status.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--danger-bg)"></div><div class="info"><b>danger</b><code>#7f1d1d / #fca5a5</code><p>Error and failure states.</p></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="brand-ramps">
+      <h2>Brand ramps</h2>
+      <p class="lede">The same logic as the neutral ramp, built around a brand color. Blue <code>#014d78</code> and teal <code>#015c59</code> are the example brands here; generate any brand with <code>tools/brand.py</code>. Hue is held constant, lightness steps up one level at a time, and the brand color itself is level 3. Levels 0 to 2 are the deeper surfaces beneath it; 4 and 5 are the lighter steps above it. Computed in OKLCH so each step looks evenly spaced.</p>
+
+      <h3>Blue</h3>
+      <div class="ramp6"><div style="background:var(--blue-0)"><span class="lvl">0</span><div><b>blue-0</b><span>#000e22</span><span>ground · themed region</span><div class="cr">white 18.5:1<br>subdued 13.5:1</div></div></div><div style="background:var(--blue-1)"><span class="lvl">1</span><div><b>blue-1</b><span>#001f3c</span><span>panel · navbar, sidebar</span><div class="cr">white 16.0:1<br>subdued 11.6:1</div></div></div><div style="background:var(--blue-2)"><span class="lvl">2</span><div><b>blue-2</b><span>#003359</span><span>card · inside a panel</span><div class="cr">white 12.4:1<br>subdued 9.1:1</div></div></div><div style="background:var(--blue-3)"><span class="lvl">3</span><div><b>blue-3</b><span>#014d78</span><span>brand · promo and CTA fill</span><div class="cr">white 8.6:1<br>subdued 6.3:1</div></div></div><div style="background:var(--blue-4)"><span class="lvl">4</span><div><b>blue-4</b><span>#1c5d88</span><span>hover · press on brand</span><div class="cr">white 6.8:1<br>subdued 4.9:1</div></div></div><div style="background:var(--blue-5)"><span class="lvl">5</span><div><b>blue-5</b><span>#306b95</span><span>strongest · selected, chip</span><div class="cr">white 5.5:1<br>subdued 4.0:1</div></div></div></div>
+      <h3>Teal</h3>
+      <div class="ramp6"><div style="background:var(--teal-0)"><span class="lvl">0</span><div><b>teal-0</b><span>#001211</span><span>ground · themed region</span><div class="cr">white 18.4:1<br>subdued 13.4:1</div></div></div><div style="background:var(--teal-1)"><span class="lvl">1</span><div><b>teal-1</b><span>#002523</span><span>panel · navbar, sidebar</span><div class="cr">white 15.6:1<br>subdued 11.4:1</div></div></div><div style="background:var(--teal-2)"><span class="lvl">2</span><div><b>teal-2</b><span>#003b38</span><span>card · inside a panel</span><div class="cr">white 12.0:1<br>subdued 8.7:1</div></div></div><div style="background:var(--teal-3)"><span class="lvl">3</span><div><b>teal-3</b><span>#015c59</span><span>brand · promo and CTA fill</span><div class="cr">white 7.5:1<br>subdued 5.5:1</div></div></div><div style="background:var(--teal-4)"><span class="lvl">4</span><div><b>teal-4</b><span>#206c68</span><span>hover · press on brand</span><div class="cr">white 5.9:1<br>subdued 4.3:1</div></div></div><div style="background:var(--teal-5)"><span class="lvl">5</span><div><b>teal-5</b><span>#357a76</span><span>strongest · selected, chip</span><div class="cr">white 4.8:1<br>subdued 3.5:1</div></div></div></div>
+
+      <h3>Roles</h3>
+      <ul class="apply">
+        <li><b>3 is the brand surface.</b> It is what promo and CTA surfaces already use (<code>#014d78</code> and <code>#015c59</code>). The sheen and decorative lines sit on level 3 only.</li>
+        <li><b>4 is hover and press.</b> One step lighter, text goes to <code>text-base</code>. It carries the same rule as the neutral ramp: interaction is a fill change.</li>
+        <li><b>5 is strongest.</b> Selected state or a chip on level 3. White text only.</li>
+        <li><b>0, 1, 2 are for a fully branded region</b> such as onboarding or a marketing view: ground, panel, card. The standard app stays on the neutral ramp, so these are not used for tables, forms or KPIs.</li>
+      </ul>
+
+      <h3>Vivid surface (level 6)</h3>
+      <p class="lede" style="margin-bottom:var(--space-3)">One step above the brand level, for the occasional surface that must lift above everything else: <code>#019df7</code> blue and <code>#03c3bb</code> teal. It carries the same sheen and the same decoration as level 3. Because it is much lighter, it is a different tier of emphasis and not a hover state.</p>
+      <div class="pair">
+        <div class="surface blue vivid arcs kpi"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg><div class="row"><span>Your Library</span><span>&#9679;</span></div><div class="val">Good evening</div><div class="cap">It's easy, we'll help you</div></div>
+        <div class="surface teal vivid arcs kpi"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg><div class="row"><span>Your Library</span><span>&#9679;</span></div><div class="val">Good evening</div><div class="cap">It's easy, we'll help you</div></div>
+      </div>
+      <div class="pair" style="margin-top:var(--space-2)">
+        <div class="surface blue vivid promo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-sweep"/></svg><h4 style="position:relative">Preview of Spotify</h4><p style="position:relative">Sign up to get unlimited songs and podcasts with occasional ads. No credit card needed.</p><button class="btn btn-ink">Sign up free</button></div>
+        <div class="surface teal vivid promo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-veil"/></svg><h4 style="position:relative">Let's find some podcasts to follow</h4><p style="position:relative">We'll keep you updated on new episodes</p><button class="btn btn-ink">Browse podcasts</button></div>
+      </div>
+      <ul class="apply" style="margin-top:var(--space-4)">
+        <li><b>Occasional, and instead of level 3:</b> a view has one highlight surface, either brand (3) or vivid (6), never both. Use vivid for the single most important announcement or CTA.</li>
+        <li><b>Dark ink text, not white.</b> White on vivid is 2.8:1 on blue and 2.1:1 on teal, and the grey subdued text is about 1:1. Text on level 6 is the near-black ink below, with hierarchy from size and weight.</li>
+        <li><b>The CTA is the ink pill.</b> On vivid, as on every surface and ink pair, the CTA is filled with the ink and labelled with the surface color, so it is always the strongest control on the surface.</li>
+        <li><b>Sheen and lines still apply.</b> Contrast below is the worst case across the sheen, from its darkest corner to its lightest.</li>
+      </ul>
+      <div class="table-wrap" style="margin-top:var(--space-4)">
+        <table>
+          <thead><tr><th>Step</th><th>Fill</th><th>Ink</th><th>Ink worst case</th><th>Subdued ink</th><th>Subdued worst case</th></tr></thead>
+          <tbody><tr><td>blue-6</td><td><code>#019df7</code></td><td><code>#00051e</code></td><td class="ok">4.6</td><td><code>#000823</code></td><td class="ok">4.5</td></tr><tr><td>teal-6</td><td><code>#03c3bb</code></td><td><code>#000a09</code></td><td class="ok">5.9</td><td><code>#002724</code></td><td class="ok">4.7</td></tr></tbody>
+        </table>
+      </div>
+      <p class="note">Worst case is measured across the sheen gradient, not just the flat fill. Blue ink is only 4.6:1 at the darkest corner, so keep text off the top-left edge of the sheen and do not go lighter than <code>#000823</code>.</p>
+
+      <h3>The nesting ramp, live</h3>
+      <div class="pair"><div class="nestb" style="background:var(--blue-0)"><code>blue-0 · ground</code><div style="background:var(--blue-1)"><code>blue-1 · panel</code><div style="background:var(--blue-2)"><code>blue-2 · card</code><div style="background:var(--blue-3)"><code>blue-3 · brand</code><div style="background:var(--blue-4)"><code>blue-4 · hover</code><code>blue-5 · strongest</code></div></div></div></div></div><div class="nestb" style="background:var(--teal-0)"><code>teal-0 · ground</code><div style="background:var(--teal-1)"><code>teal-1 · panel</code><div style="background:var(--teal-2)"><code>teal-2 · card</code><div style="background:var(--teal-3)"><code>teal-3 · brand</code><div style="background:var(--teal-4)"><code>teal-4 · hover</code><code>teal-5 · strongest</code></div></div></div></div></div></div>
+
+      <h3>Text on tint</h3>
+      <p class="lede" style="margin-bottom:var(--space-3)">The neutral subdued grey <code>#a1a1aa</code> falls below 4.5:1 on the brand level (3.5:1 on blue, 3.1:1 on teal). On any tinted surface, subdued text is a tinted white instead. The tinted surface classes re-scope <code>--text-subdued</code> to it, so existing components pick it up.</p>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:var(--blue-3);display:grid;place-items:center;color:var(--on-blue-subdued);font-weight: 700">Aa</div><div class="info"><b>on-blue-subdued</b><code>#d0d9e0</code><p>Captions, labels and body on blue levels 0 to 3. 6.3:1 on level 3.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--blue-3);display:grid;place-items:center;color:var(--on-blue-muted);font-weight: 700">Aa</div><div class="info"><b>on-blue-muted</b><code>#adb9c3</code><p>Non-essential text and icons. 4.5:1 on level 3, fine from level 0 to 3.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--teal-3);display:grid;place-items:center;color:var(--on-teal-subdued);font-weight: 700">Aa</div><div class="info"><b>on-teal-subdued</b><code>#d0dad9</code><p>Same role on teal. 5.5:1 on level 3.</p></div></div>
+        <div class="sw"><div class="chip" style="background:var(--teal-3);display:grid;place-items:center;color:var(--on-teal-muted);font-weight: 700">Aa</div><div class="info"><b>on-teal-muted</b><code>#adbbb9</code><p>Non-essential only. 4.0:1 on level 3, so no body text.</p></div></div>
+      </div>
+
+      <h3>Contrast, all steps</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Step</th><th>Hex</th><th>White</th><th>On-subdued</th><th>On-muted</th><th>Grey #a1a1aa</th></tr></thead>
+          <tbody><tr><td>blue-0</td><td><code>#000e22</code></td><td class="ok">18.5</td><td class="ok">13.5</td><td class="ok">9.7</td><td class="ok">7.5</td></tr><tr><td>blue-1</td><td><code>#001f3c</code></td><td class="ok">16.0</td><td class="ok">11.6</td><td class="ok">8.3</td><td class="ok">6.5</td></tr><tr><td>blue-2</td><td><code>#003359</code></td><td class="ok">12.4</td><td class="ok">9.1</td><td class="ok">6.5</td><td class="ok">5.1</td></tr><tr><td>blue-3</td><td><code>#014d78</code></td><td class="ok">8.6</td><td class="ok">6.3</td><td class="ok">4.5</td><td class="no">3.5</td></tr><tr><td>blue-4</td><td><code>#1c5d88</code></td><td class="ok">6.8</td><td class="ok">4.9</td><td class="no">3.5</td><td class="no">2.8</td></tr><tr><td>blue-5</td><td><code>#306b95</code></td><td class="ok">5.5</td><td class="no">4.0</td><td class="no">2.9</td><td class="no">2.2</td></tr><tr><td>teal-0</td><td><code>#001211</code></td><td class="ok">18.4</td><td class="ok">13.4</td><td class="ok">9.7</td><td class="ok">7.5</td></tr><tr><td>teal-1</td><td><code>#002523</code></td><td class="ok">15.6</td><td class="ok">11.4</td><td class="ok">8.2</td><td class="ok">6.4</td></tr><tr><td>teal-2</td><td><code>#003b38</code></td><td class="ok">12.0</td><td class="ok">8.7</td><td class="ok">6.3</td><td class="ok">4.9</td></tr><tr><td>teal-3</td><td><code>#015c59</code></td><td class="ok">7.5</td><td class="ok">5.5</td><td class="no">4.0</td><td class="no">3.1</td></tr><tr><td>teal-4</td><td><code>#206c68</code></td><td class="ok">5.9</td><td class="no">4.3</td><td class="no">3.1</td><td class="no">2.4</td></tr><tr><td>teal-5</td><td><code>#357a76</code></td><td class="ok">4.8</td><td class="no">3.5</td><td class="no">2.5</td><td class="no">2.0</td></tr></tbody>
+        </table>
+      </div>
+      <p class="note">Green is 4.5:1 or better, red is below. On-subdued passes on levels 0 to 3 for both hues. On levels 4 and 5, use white text only; teal level 5 is 4.8:1 with white.</p>
+    </section>
+
+    <section class="panel" id="pairs">
+      <h2>Surface and ink pairs</h2>
+      <p class="lede">A surface is never a fill with a global text color laid over it. It is a locked pair: the surface, the ink that sits on it, and a softer ink for secondary text, chosen and contrast-tested together. Everything drawn on the surface uses that ink: text, icons, strokes, the decorative lines and the CTA.</p>
+      <div class="callout-rule"><b>The rule: every surface is a pair.</b> No component sets its own text or fill color. A new surface gets a pair first, then a component reads <code>--surface</code>, <code>--ink</code> and <code>--ink-soft</code> from it. This applies to the page ground, panels, cards, inputs, table rows, menus, buttons, badges and highlights alike.</div>
+      <div class="pairgrid">
+        <div class="pcard pair pair-ground"><div class="top"><span>Ground</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-panel"><div class="top"><span>Panel</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-raised"><div class="top"><span>Raised</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-press"><div class="top"><span>Press</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-strong"><div class="top"><span>Strong</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-blue"><div class="top"><span>Brand blue</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-teal"><div class="top"><span>Brand teal</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-blue-vivid"><div class="top"><span>Vivid blue</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-teal-vivid"><div class="top"><span>Vivid teal</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-paper"><div class="top"><span>Paper</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-paper-blue"><div class="top"><span>Paper blue</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-mist"><div class="top"><span>Mist teal</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-amber"><div class="top"><span>Amber</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-rose"><div class="top"><span>Rose</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-warning"><div class="top"><span>Warning</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        <div class="pcard pair pair-danger"><div class="top"><span>Danger</span><svg class="mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8.5"/><path d="M7 11h8M11 7v8"/></svg></div><div class="val">Good evening</div><div class="cap soft">It's easy, we'll help you</div><button class="btn btn-pair">Play</button></div>
+        
+      </div>
+
+      <h3>How a pair behaves</h3>
+      <ul class="apply">
+        <li><b>Three values, one pair.</b> <code>--surface</code>, <code>--ink</code> and <code>--ink-soft</code>. A component reads these and never a fixed text color, so the same card works on any pair.</li>
+        <li><b>One ink, no grey.</b> Secondary text is <code>--ink-soft</code>, the ink pulled toward the surface in OKLab, so it keeps the hue. Hierarchy otherwise comes from size and weight.</li>
+        <li><b>Tonal or accent.</b> Most pairs are tonal: the ink is the same hue family as the surface at a far lightness (navy on paper, deep teal on mist, white on blue). Accent pairs use a different, purposeful hue (amber, rose), reserved for status.</li>
+        <li><b>The CTA inverts the pair.</b> The pill is filled with <code>--ink</code> and labelled with <code>--surface</code>, so it is always the strongest control on the surface. This is the default button.</li>
+        <li><b>Nested surfaces step up one pair.</b> A raised fill inside a panel, a menu above it, a hover state on a row: each is the next neutral pair, with its own ink, not the parent's ink on a new fill.</li>
+        <li><b>Icons and lines use the ink.</b> Strokes are <code>currentColor</code>. The decorative lines and arcs stay white on dark pairs; on inverse and accent pairs they are not used.</li>
+        <li><b>Tested at the worst point.</b> Where a pair has the sheen, contrast is the worst case across the gradient, from its darkest to its lightest corner.</li>
+        <li><b>One exception: links.</b> A text link uses <code>--link</code> <code>#60a5fa</code> on the neutral pairs. It is a semantic color, not a surface ink.</li>
+      </ul>
+
+      <h3>Tiers</h3>
+      <ul class="apply">
+        <li><b>Neutral</b> (ground, panel, raised, press, strong): the default ramp. Most of the app.</li>
+        <li><b>Brand</b> (blue, teal at level 3): the highlight surface. Sheen and decoration allowed.</li>
+        <li><b>Vivid</b> (level 6): occasional, dark ink. Instead of brand, never with it.</li>
+        <li><b>Inverse</b> (paper, paper blue, mist): light pairs on the dark UI for rare, high-emphasis moments such as a receipt, a printable statement or a share card. No sheen, no decoration.</li>
+        <li><b>Accent</b> (amber and rose light; warning and danger dark): status only. The warning and danger pairs are what the status badges use.</li>
+      </ul>
+
+      <h3>Contrast</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pair</th><th>Role</th><th>Surface</th><th>Ink</th><th>Ink</th><th>Soft ink</th><th>Soft</th></tr></thead>
+          <tbody><tr><td>ground</td><td>Default ground</td><td><code>#0c0c0c</code></td><td><code>#fafafa</code></td><td class="ok">18.7</td><td><code>#a1a1aa</code></td><td class="ok">7.6</td></tr><tr><td>panel</td><td>Default panel, cards</td><td><code>#1c1c1e</code></td><td><code>#fafafa</code></td><td class="ok">16.3</td><td><code>#a1a1aa</code></td><td class="ok">6.6</td></tr><tr><td>raised</td><td>Search, zebra rows, fills</td><td><code>#252528</code></td><td><code>#fafafa</code></td><td class="ok">14.6</td><td><code>#a1a1aa</code></td><td class="ok">6.0</td></tr><tr><td>press</td><td>Hover, menus</td><td><code>#2f2f33</code></td><td><code>#fafafa</code></td><td class="ok">12.8</td><td><code>#a1a1aa</code></td><td class="ok">5.2</td></tr><tr><td>strong</td><td>Strongest fill</td><td><code>#3f3f43</code></td><td><code>#fafafa</code></td><td class="ok">10.0</td><td><code>#aaaaac</code></td><td class="ok">4.5</td></tr><tr><td>blue</td><td>Brand level 3</td><td><code>#014d78</code></td><td><code>#fafafa</code></td><td class="ok">8.1</td><td><code>#d0d9e0</code></td><td class="ok">5.9</td></tr><tr><td>teal</td><td>Brand level 3</td><td><code>#015c59</code></td><td><code>#fafafa</code></td><td class="ok">7.2</td><td><code>#d0dad9</code></td><td class="ok">5.3</td></tr><tr><td>blue-vivid</td><td>Vivid level 6</td><td><code>#019df7</code></td><td><code>#00051e</code></td><td class="ok">4.6</td><td><code>#000925</code></td><td class="ok">4.5</td></tr><tr><td>teal-vivid</td><td>Vivid level 6</td><td><code>#03c3bb</code></td><td><code>#000a09</code></td><td class="ok">5.9</td><td><code>#002a28</code></td><td class="ok">4.6</td></tr><tr><td>paper</td><td>Inverse paper</td><td><code>#fafafa</code></td><td><code>#003359</code></td><td class="ok">12.4</td><td><code>#476785</code></td><td class="ok">5.7</td></tr><tr><td>paper-blue</td><td>Inverse tonal</td><td><code>#e8f0f6</code></td><td><code>#003359</code></td><td class="ok">11.3</td><td><code>#436483</code></td><td class="ok">5.4</td></tr><tr><td>mist</td><td>Inverse tonal</td><td><code>#cfe7e5</code></td><td><code>#003b38</code></td><td class="ok">9.6</td><td><code>#3e6764</code></td><td class="ok">4.9</td></tr><tr><td>amber</td><td>Accent light</td><td><code>#fde68a</code></td><td><code>#433f0b</code></td><td class="ok">8.6</td><td><code>#71682c</code></td><td class="ok">4.5</td></tr><tr><td>rose</td><td>Accent light</td><td><code>#fca5a5</code></td><td><code>#7f1d1d</code></td><td class="ok">5.3</td><td><code>#8a2b29</code></td><td class="ok">4.5</td></tr><tr><td>warning</td><td>Status badge</td><td><code>#433f0b</code></td><td><code>#fde68a</code></td><td class="ok">8.6</td><td><code>#b9a95d</code></td><td class="ok">4.6</td></tr><tr><td>danger</td><td>Status badge</td><td><code>#7f1d1d</code></td><td><code>#fca5a5</code></td><td class="ok">5.3</td><td><code>#ee9695</code></td><td class="ok">4.5</td></tr></tbody>
+        </table>
+      </div>
+      <p class="note">Every ink and soft ink is at least 4.5:1. The vivid blue soft ink is nearly the ink itself, because the ink is only 4.6:1 and there is no room to soften it.</p>
+
+      <h3>Tokens and mechanism</h3>
+<pre>:root {
+  --pair-ground-surface: #0c0c0c; --pair-ground-ink: #fafafa; --pair-ground-soft: #a1a1aa;
+  --pair-panel-surface: #1c1c1e; --pair-panel-ink: #fafafa; --pair-panel-soft: #a1a1aa;
+  --pair-raised-surface: #252528; --pair-raised-ink: #fafafa; --pair-raised-soft: #a1a1aa;
+  --pair-press-surface: #2f2f33; --pair-press-ink: #fafafa; --pair-press-soft: #a1a1aa;
+  --pair-strong-surface: #3f3f43; --pair-strong-ink: #fafafa; --pair-strong-soft: #aaaaac;
+  --pair-blue-surface: #014d78; --pair-blue-ink: #fafafa; --pair-blue-soft: #d0d9e0;
+  --pair-teal-surface: #015c59; --pair-teal-ink: #fafafa; --pair-teal-soft: #d0dad9;
+  --pair-blue-vivid-surface: #019df7; --pair-blue-vivid-ink: #00051e; --pair-blue-vivid-soft: #000925;
+  --pair-teal-vivid-surface: #03c3bb; --pair-teal-vivid-ink: #000a09; --pair-teal-vivid-soft: #002a28;
+  --pair-paper-surface: #fafafa; --pair-paper-ink: #003359; --pair-paper-soft: #476785;
+  --pair-paper-blue-surface: #e8f0f6; --pair-paper-blue-ink: #003359; --pair-paper-blue-soft: #436483;
+  --pair-mist-surface: #cfe7e5; --pair-mist-ink: #003b38; --pair-mist-soft: #3e6764;
+  --pair-amber-surface: #fde68a; --pair-amber-ink: #433f0b; --pair-amber-soft: #71682c;
+  --pair-rose-surface: #fca5a5; --pair-rose-ink: #7f1d1d; --pair-rose-soft: #8a2b29;
+  --pair-warning-surface: #433f0b; --pair-warning-ink: #fde68a; --pair-warning-soft: #b9a95d;
+  --pair-danger-surface: #7f1d1d; --pair-danger-ink: #fca5a5; --pair-danger-soft: #ee9695;
+}
+/* one rule applies a pair to any element */
+[data-pair="panel"] {
+  --surface: var(--pair-panel-surface);
+  --ink: var(--pair-panel-ink);
+  --ink-soft: var(--pair-panel-soft);
+}
+[data-pair] {
+  background-color: var(--surface);
+  color: var(--ink);
+  --muted-foreground: var(--ink-soft);
+}
+.cta { background: var(--ink); color: var(--surface); }</pre>
+    </section>
+
+    <section class="panel" id="texture">
+      <h2>Tint and texture</h2>
+      <p class="lede">A highlight surface is a flat tint, a diagonal sheen from darker top-left to lighter bottom-right, and three hairline arcs anchored to the right edge. It is the only decorative element in the system, and it is reserved for a promo or a call to action. Everything else is a plain fill.</p>
+      <div class="tints">
+        <div class="surface blue arcs promo"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg><h4>Preview of Spotify</h4><p>Sign up to get unlimited songs and podcasts with occasional ads. No credit card needed.</p><button class="btn btn-primary">Sign up free</button></div>
+        <div class="surface teal arcs promo"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg><h4>Let's find some podcasts to follow</h4><p>We'll keep you updated on new episodes</p><button class="btn btn-primary">Browse podcasts</button></div>
+      </div>
+      <h3>Not decorated</h3>
+      <div class="tints" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="plain kpi"><div class="row"><span>Your Library</span><span>&#9679;</span></div><div class="val">Good evening</div><div class="cap">It's easy, we'll help you</div></div>
+        <div class="plain kpi"><div class="row"><span>Support</span><span>&#9679;</span></div><div class="val">Premium</div><div class="cap">No credit card needed.</div></div>
+        <div class="plain kpi"><div class="row"><span>Download</span><span>&#9679;</span></div><div class="val">Play</div><div class="cap">What do you want to play?</div></div>
+      </div>
+      <p class="note">Data surfaces such as KPI cards use <code>bg-elevated</code> with no tint, sheen or arcs, so the highlight is the only thing that reads as emphasis.</p>
+      <h3>Anatomy</h3>
+      <ul class="apply">
+        <li><b>Tint:</b> <code>#014d78</code> blue or <code>#015c59</code> teal. Neutral <code>#1c1c1e</code> is the same as a plain panel, so it is not a highlight.</li>
+        <li><b>Sheen:</b> <code>linear-gradient(111.4deg, rgba(0,0,0,.2) 2%, rgba(102,102,102,.2) 95%)</code> over the tint.</li>
+        <li><b>Arcs:</b> inline SVG, not an image. Three 272 &times; 257 ellipses in one <code>&lt;symbol id="arcs"&gt;</code>, 1px stroke at 28% white via <code>--arc</code>, clipped by the surface and anchored right.</li>
+        <li><b>Radius:</b> 8px. No border, no shadow. Text stays <code>text-base</code> and <code>text-subdued</code>; the button on it is the white primary pill.</li>
+        <li><b>Where:</b> a promo banner or a CTA card. Announcements sit at the top of the page content, directly under the navbar and above the page header. One per view, never in a table or form, never on a KPI. It is either a brand (level 3) or a vivid (level 6) surface.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="decor">
+      <h2>Decorative lines</h2>
+      <p class="lede">Dense bundles of hairlines that converge to a point and fan out, like a twisted ribbon. Monochrome white lines blended with overlay, so the surface keeps its own color. They replace the concentric arcs as the highlight motif; the arcs remain as the plainest fallback.</p>
+      <div class="decor-grid">
+        <div class="surface blue decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-sweep"/></svg><b>Sweep</b><p>Two bundles converge at the bottom-left and fan up to the right. Closest to a modern payments hero.</p><code>/decor/sweep.svg</code></div>
+        <div class="surface teal decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-veil"/></svg><b>Veil</b><p>One wide band in a gentle S-curve. The calmest of the five.</p><code>/decor/veil.svg</code></div>
+        <div class="surface blue decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-twist"/></svg><b>Twist</b><p>A ribbon whose edges cross mid-card, pinching like a twisted band.</p><code>/decor/twist.svg</code></div>
+        <div class="surface teal decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-cascade"/></svg><b>Cascade</b><p>Three nested bundles sweeping into the bottom-right corner.</p><code>/decor/cascade.svg</code></div>
+        <div class="surface blue decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><use href="#decor-glow"/></svg><b>Glow</b><p>Sweep over a soft light bloom. Adds depth; use only on a CTA.</p><code>/decor/glow.svg</code></div>
+        <div class="surface blue decor-demo"><svg class="decor-art" viewBox="0 0 471 257" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><g fill="none" stroke="url(#decor-fade)" stroke-width="0.8" stroke-linecap="round"><path class="decor-line" d="M-30 262C140 238 320 130 520 -20" stroke-opacity="1.00" vector-effect="non-scaling-stroke" style="--i:0;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139.9 238.1 320 130.2 520 -19.7" stroke-opacity="0.98" vector-effect="non-scaling-stroke" style="--i:1;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139.8 238.2 319.9 130.7 520 -19.2" stroke-opacity="0.96" vector-effect="non-scaling-stroke" style="--i:2;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139.7 238.4 319.8 131.3 520 -18.5" stroke-opacity="0.94" vector-effect="non-scaling-stroke" style="--i:3;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139.5 238.6 319.7 132 520 -17.6" stroke-opacity="0.92" vector-effect="non-scaling-stroke" style="--i:4;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139.3 238.9 319.6 132.8 520 -16.7" stroke-opacity="0.90" vector-effect="non-scaling-stroke" style="--i:5;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C139 239.2 319.5 133.7 520 -15.6" stroke-opacity="0.88" vector-effect="non-scaling-stroke" style="--i:6;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C138.8 239.5 319.4 134.6 520 -14.5" stroke-opacity="0.86" vector-effect="non-scaling-stroke" style="--i:7;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C138.5 239.8 319.3 135.6 520 -13.3" stroke-opacity="0.84" vector-effect="non-scaling-stroke" style="--i:8;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C138.2 240.1 319.1 136.7 520 -12" stroke-opacity="0.83" vector-effect="non-scaling-stroke" style="--i:9;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C137.9 240.5 319 137.9 520 -10.6" stroke-opacity="0.81" vector-effect="non-scaling-stroke" style="--i:10;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C137.6 240.9 318.8 139.1 520 -9.1" stroke-opacity="0.79" vector-effect="non-scaling-stroke" style="--i:11;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C137.2 241.3 318.6 140.3 520 -7.6" stroke-opacity="0.77" vector-effect="non-scaling-stroke" style="--i:12;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C136.9 241.7 318.4 141.6 520 -6" stroke-opacity="0.75" vector-effect="non-scaling-stroke" style="--i:13;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C136.5 242.2 318.3 143 520 -4.4" stroke-opacity="0.74" vector-effect="non-scaling-stroke" style="--i:14;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C136.2 242.6 318.1 144.4 520 -2.7" stroke-opacity="0.72" vector-effect="non-scaling-stroke" style="--i:15;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C135.8 243.1 317.9 145.9 520 -0.9" stroke-opacity="0.70" vector-effect="non-scaling-stroke" style="--i:16;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C135.4 243.6 317.7 147.4 520 0.9" stroke-opacity="0.68" vector-effect="non-scaling-stroke" style="--i:17;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C134.9 244.1 317.5 149 520 2.8" stroke-opacity="0.67" vector-effect="non-scaling-stroke" style="--i:18;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C134.5 244.6 317.3 150.6 520 4.7" stroke-opacity="0.65" vector-effect="non-scaling-stroke" style="--i:19;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C134.1 245.1 317 152.2 520 6.7" stroke-opacity="0.64" vector-effect="non-scaling-stroke" style="--i:20;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C133.6 245.7 316.8 153.9 520 8.7" stroke-opacity="0.62" vector-effect="non-scaling-stroke" style="--i:21;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C133.2 246.2 316.6 155.6 520 10.8" stroke-opacity="0.60" vector-effect="non-scaling-stroke" style="--i:22;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C132.7 246.8 316.3 157.4 520 12.9" stroke-opacity="0.59" vector-effect="non-scaling-stroke" style="--i:23;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C132.2 247.3 316.1 159.2 520 15.1" stroke-opacity="0.57" vector-effect="non-scaling-stroke" style="--i:24;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C131.7 247.9 315.9 161.1 520 17.3" stroke-opacity="0.56" vector-effect="non-scaling-stroke" style="--i:25;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C131.2 248.5 315.6 162.9 520 19.5" stroke-opacity="0.54" vector-effect="non-scaling-stroke" style="--i:26;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C130.7 249.2 315.4 164.9 520 21.8" stroke-opacity="0.53" vector-effect="non-scaling-stroke" style="--i:27;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C130.2 249.8 315.1 166.8 520 24.2" stroke-opacity="0.52" vector-effect="non-scaling-stroke" style="--i:28;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C129.7 250.4 314.8 168.8 520 26.6" stroke-opacity="0.50" vector-effect="non-scaling-stroke" style="--i:29;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C129.1 251.1 314.6 170.8 520 29" stroke-opacity="0.49" vector-effect="non-scaling-stroke" style="--i:30;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C128.6 251.7 314.3 172.9 520 31.5" stroke-opacity="0.48" vector-effect="non-scaling-stroke" style="--i:31;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C128 252.4 314 175 520 34" stroke-opacity="0.46" vector-effect="non-scaling-stroke" style="--i:32;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C127.4 253.1 313.7 177.1 520 36.5" stroke-opacity="0.45" vector-effect="non-scaling-stroke" style="--i:33;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C126.9 253.8 313.4 179.3 520 39.1" stroke-opacity="0.44" vector-effect="non-scaling-stroke" style="--i:34;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C126.3 254.5 313.1 181.4 520 41.7" stroke-opacity="0.43" vector-effect="non-scaling-stroke" style="--i:35;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C125.7 255.2 312.8 183.7 520 44.4" stroke-opacity="0.42" vector-effect="non-scaling-stroke" style="--i:36;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C125.1 255.9 312.5 185.9 520 47.1" stroke-opacity="0.41" vector-effect="non-scaling-stroke" style="--i:37;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C124.5 256.6 312.2 188.2 520 49.8" stroke-opacity="0.40" vector-effect="non-scaling-stroke" style="--i:38;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C123.9 257.4 311.9 190.5 520 52.6" stroke-opacity="0.39" vector-effect="non-scaling-stroke" style="--i:39;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C123.2 258.1 311.6 192.9 520 55.4" stroke-opacity="0.38" vector-effect="non-scaling-stroke" style="--i:40;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C122.6 258.9 311.3 195.2 520 58.3" stroke-opacity="0.37" vector-effect="non-scaling-stroke" style="--i:41;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C122 259.6 311 197.6 520 61.2" stroke-opacity="0.36" vector-effect="non-scaling-stroke" style="--i:42;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C121.3 260.4 310.7 200.1 520 64.1" stroke-opacity="0.36" vector-effect="non-scaling-stroke" style="--i:43;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C120.7 261.2 310.3 202.5 520 67" stroke-opacity="0.35" vector-effect="non-scaling-stroke" style="--i:44;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M-30 262C120 262 310 205 520 70" stroke-opacity="0.35" vector-effect="non-scaling-stroke" style="--i:45;--a:0.04deg;--ox:-30px;--oy:262px"/><path class="decor-line" d="M150 290C300 250 430 170 520 90" stroke-opacity="1.00" vector-effect="non-scaling-stroke" style="--i:0;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C299.9 250.3 430 170.7 520 90.7" stroke-opacity="0.96" vector-effect="non-scaling-stroke" style="--i:1;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C299.8 250.8 430 171.9 520 91.9" stroke-opacity="0.93" vector-effect="non-scaling-stroke" style="--i:2;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C299.6 251.5 430 173.3 520 93.3" stroke-opacity="0.89" vector-effect="non-scaling-stroke" style="--i:3;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C299.4 252.2 430 175 520 95" stroke-opacity="0.86" vector-effect="non-scaling-stroke" style="--i:4;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C299.1 253 430 176.8 520 96.8" stroke-opacity="0.83" vector-effect="non-scaling-stroke" style="--i:5;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C298.9 253.9 430 178.8 520 98.8" stroke-opacity="0.79" vector-effect="non-scaling-stroke" style="--i:6;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C298.6 254.8 430 180.9 520 100.9" stroke-opacity="0.76" vector-effect="non-scaling-stroke" style="--i:7;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C298.4 255.8 430 183.2 520 103.2" stroke-opacity="0.73" vector-effect="non-scaling-stroke" style="--i:8;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C298.1 256.8 430 185.5 520 105.5" stroke-opacity="0.70" vector-effect="non-scaling-stroke" style="--i:9;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C297.7 257.9 430 188 520 108" stroke-opacity="0.66" vector-effect="non-scaling-stroke" style="--i:10;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C297.4 259 430 190.6 520 110.6" stroke-opacity="0.63" vector-effect="non-scaling-stroke" style="--i:11;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C297.1 260.2 430 193.3 520 113.3" stroke-opacity="0.61" vector-effect="non-scaling-stroke" style="--i:12;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C296.7 261.4 430 196 520 116" stroke-opacity="0.58" vector-effect="non-scaling-stroke" style="--i:13;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C296.4 262.6 430 198.9 520 118.9" stroke-opacity="0.55" vector-effect="non-scaling-stroke" style="--i:14;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C296 263.9 430 201.8 520 121.8" stroke-opacity="0.52" vector-effect="non-scaling-stroke" style="--i:15;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C295.7 265.2 430 204.8 520 124.8" stroke-opacity="0.49" vector-effect="non-scaling-stroke" style="--i:16;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C295.3 266.6 430 207.9 520 127.9" stroke-opacity="0.47" vector-effect="non-scaling-stroke" style="--i:17;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C294.9 268 430 211 520 131" stroke-opacity="0.44" vector-effect="non-scaling-stroke" style="--i:18;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C294.5 269.4 430 214.3 520 134.3" stroke-opacity="0.42" vector-effect="non-scaling-stroke" style="--i:19;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C294.1 270.8 430 217.6 520 137.6" stroke-opacity="0.40" vector-effect="non-scaling-stroke" style="--i:20;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C293.6 272.3 430 220.9 520 140.9" stroke-opacity="0.37" vector-effect="non-scaling-stroke" style="--i:21;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C293.2 273.8 430 224.3 520 144.3" stroke-opacity="0.35" vector-effect="non-scaling-stroke" style="--i:22;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C292.8 275.3 430 227.8 520 147.8" stroke-opacity="0.33" vector-effect="non-scaling-stroke" style="--i:23;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C292.3 276.9 430 231.4 520 151.4" stroke-opacity="0.31" vector-effect="non-scaling-stroke" style="--i:24;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C291.9 278.4 430 235 520 155" stroke-opacity="0.30" vector-effect="non-scaling-stroke" style="--i:25;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C291.4 280 430 238.7 520 158.7" stroke-opacity="0.28" vector-effect="non-scaling-stroke" style="--i:26;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C291 281.7 430 242.4 520 162.4" stroke-opacity="0.27" vector-effect="non-scaling-stroke" style="--i:27;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C290.5 283.3 430 246.2 520 166.2" stroke-opacity="0.26" vector-effect="non-scaling-stroke" style="--i:28;--a:0.05deg;--ox:150px;--oy:290px"/><path class="decor-line" d="M150 290C290 285 430 250 520 170" stroke-opacity="0.25" vector-effect="non-scaling-stroke" style="--i:29;--a:0.05deg;--ox:150px;--oy:290px"/></g></svg><b>Sweep, animated</b><p>The Sweep fan breathes: each line rotates a fraction of a degree about the shared origin, phase-shifted so a soft wave moves across it.</p><code>16s cycle, under 2 degrees</code></div>
+      </div>
+      <h3>Glow and color drift</h3>
+      <p class="lede" style="margin-bottom:var(--space-3)">Inspired by the orb technique, applied to the decor and not as a shape, and rendered by a shader. One WebGL2 fragment shader draws the gradient and the ribbon lines together. The gradient is a soft mesh of color fields that drift slowly across the right of the surface under a gentle warp, trading two vivid fills back and forth. There is nothing radial or conic in it, so it never pinches into rays. The ribbons are the same Bezier bundles as the Sweep and Veil motifs, drawn per pixel, and their tint drifts with the gradient. The canvas is composited with <code>screen</code> over the surface, so the surface keeps its own color.</p>
+      <div class="pair">
+        <div class="surface blue glow-card"><canvas data-motif="sweep" aria-hidden="true"></canvas><h4 style="margin:0;font-size:16px">Preview of Spotify</h4><p style="margin:0;font-size:14px;color:var(--text-subdued);max-width:30ch">Sign up to get unlimited songs and podcasts. No credit card needed.</p><button class="btn btn-primary">Sign up free</button></div>
+        <div class="surface teal glow-card" style="--decor-a: var(--teal-6); --decor-b: var(--blue-6)"><canvas data-motif="veil" aria-hidden="true"></canvas><h4 style="margin:0;font-size:16px">Let's find some podcasts to follow</h4><p style="margin:0;font-size:14px;color:var(--text-subdued);max-width:30ch">We'll keep you updated on new episodes</p><button class="btn btn-primary">Browse podcasts</button></div>
+      </div>
+      <ul class="apply" style="margin-top:var(--space-4)">
+        <li><b>Slow and subtle:</b> the color fields drift over roughly 30 to 70 seconds and the two colors trade places over about 28. The gradient peaks at about 40% strength. Under <code>prefers-reduced-motion</code> the shader draws one static frame and stops.</li>
+        <li><b>Color from two variables:</b> the shader reads <code>--decor-a</code> and <code>--decor-b</code> from the canvas. A project points them at its brand's two vivid fills.</li>
+        <li><b>Exact ribbons:</b> each bundle is a patch between two cubic edges. Per pixel the shader inverts the patch with Newton's method and draws constant-width iso-lines of the result, so the curves match the SVG motifs at any size. Lines are brighter toward the top edge, breathe with a travelling phase, and fade out toward the copy.</li>
+        <li><b>Copy stays clear:</b> the gradient fades out toward the left edge and lives in the right 60 percent of the surface, so ink contrast is set by the left side. Keep text out of it.</li>
+        <li><b>Quiet by construction:</b> 30 frames per second, a 2x pixel ratio cap, paused when offscreen or in a hidden tab. Without WebGL2 the component renders the CSS and SVG decor instead (<code>css/decor-motion.css</code>), so a surface is never left bare.</li>
+        <li><b>Same rules as the lines:</b> one highlight surface per view, a brand or vivid pair, under the navbar. One shader canvas per view, never alongside the lines.</li>
+        <li><b>Use it:</b> copy <code>lib/decor-shader.ts</code> and <code>react/decor-shader.tsx</code> into the project; for plain HTML, load <code>docs/decor-shader.js</code> and call <code>createDecorShader(canvas, { motif })</code>.</li>
+      </ul>
+      <script src="decor-shader.js"></script>
+      <script>document.querySelectorAll('.glow-card canvas').forEach(function (c) { if (window.createDecorShader) window.createDecorShader(c, { motif: c.dataset.motif }); });</script>
+      <h3>What keeps them quiet</h3>
+      <ul class="apply">
+        <li><b>Fade toward the text:</b> every stroke runs through one gradient, transparent at the left edge, 10% at 30%, 50% at the right. The copy side stays clear.</li>
+        <li><b>Hairlines, not shapes:</b> 0.8px strokes with opacity falling across each bundle, so the bundle has an edge and a shadow side without any fill.</li>
+        <li><b>Overlay blend:</b> <code>mix-blend-mode: overlay</code> (token <code>--decor-blend</code>). White lines lighten the tint beneath them instead of sitting on top as grey, so each line is a lighter shade of the surface. Multiply was tested and rejected: white times the tint is the tint, so the lines disappear.</li>
+        <li><b>Monochrome:</b> white only. The tint supplies the color, so the same motif works on blue, teal or any future tint. The surface is <code>isolation: isolate</code> so the blend never reaches the page behind it.</li>
+        <li><b>Built from two edges:</b> each bundle is the blend between two cubic curves, one path per line. 30 to 60 short paths, under 10 KB a set.</li>
+        <li><b>Anchored right, clipped:</b> <code>preserveAspectRatio="xMaxYMid slice"</code> fills the card height and pins the art to the right.</li>
+        <li><b>Motion is optional, slow and small:</b> the lines may breathe (the shader does this; the CSS version is its fallback). Each rotates under 2 degrees about its bundle's origin over a 16 second cycle, phase-shifted per line so a soft wave moves across the fan, with the opacity easing between 80% and 100%. It stops under <code>prefers-reduced-motion</code>. No other chrome animates. One highlight surface per view; Glow is for a CTA only.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="type">
+      <h2>Typography</h2>
+      <p class="lede">Spotify's site uses its own geometric sans, SpotifyMixUI (earlier CircularSp). It is proprietary, so this base ships no typeface and falls back to Helvetica Neue and Arial. Only two weights, 400 and 700; hierarchy comes from size and weight, not color. Set <code>--font-ui</code> to your project's typeface.</p>
+      <div class="type-list">
+        <div><div class="spec"><b>title-lg</b><span>32 / 700</span></div><div style="font-size:32px;font-weight:700;line-height:1.2;letter-spacing:-.01em">Something went wrong.</div></div>
+        <div><div class="spec"><b>title-md</b><span>24 / 700</span></div><div style="font-size:24px;font-weight:700;line-height:1.25">Good evening</div></div>
+        <div><div class="spec"><b>body-bold</b><span>16 / 700</span></div><div style="font-size:16px;font-weight:700">Create your first playlist</div></div>
+        <div><div class="spec"><b>body</b><span>16 / 400 / 24</span></div><div style="font-size:16px;line-height:24px">What do you want to play?</div></div>
+        <div><div class="spec"><b>label-bold</b><span>14 / 700</span></div><div style="font-size:14px;font-weight:700">Browse podcasts</div></div>
+        <div><div class="spec"><b>label</b><span>14 / 400</span></div><div style="font-size:14px">It's easy, we'll help you</div></div>
+        <div><div class="spec"><b>caption</b><span>12 / 400</span></div><div style="font-size:12px;color:var(--text-subdued)">Legal &nbsp; Privacy Policy &nbsp; Cookies &nbsp; About Ads</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="scales">
+      <h2>Spacing and radius</h2>
+      <p class="lede">An 8px base. Containers are softly rounded at 8px; everything you press is a pill.</p>
+      <h3>Spacing</h3>
+      <div class="scale">
+        <div class="scale-row"><b>space-1</b><span>4px</span><div class="bar" style="width:4px"></div></div>
+        <div class="scale-row"><b>space-2</b><span>8px</span><div class="bar" style="width:8px"></div></div>
+        <div class="scale-row"><b>space-3</b><span>12px</span><div class="bar" style="width:12px"></div></div>
+        <div class="scale-row"><b>space-4</b><span>16px</span><div class="bar" style="width:16px"></div></div>
+        <div class="scale-row"><b>space-6</b><span>24px</span><div class="bar" style="width:24px"></div></div>
+        <div class="scale-row"><b>space-8</b><span>32px</span><div class="bar" style="width:32px"></div></div>
+        <div class="scale-row"><b>space-10</b><span>40px</span><div class="bar" style="width:40px"></div></div>
+      </div>
+      <h3>Radius</h3>
+      <div class="radii">
+        <div><i style="border-radius:4px"></i>radius-sm<span>4px &middot; nav links</span></div>
+        <div><i style="border-radius:8px"></i>radius-md<span>8px &middot; panels, cards</span></div>
+        <div><i style="border-radius:16px"></i>radius-lg<span>16px &middot; dialogs</span></div>
+        <div><i style="border-radius:9999px"></i>radius-pill<span>buttons, search, badges</span></div>
+        <div><i style="border-radius:50%;width:48px"></i>radius-circle<span>avatar, icon buttons</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="components">
+      <h2>Components</h2>
+      <p class="lede">Hover and focus states are live.</p>
+      <div class="comp">
+        <div class="comp-head"><h3>Button</h3><span>40px &middot; 32px sm &middot; pill &middot; scale 1.04 on hover</span></div>
+        <div class="demo">
+          <button class="btn btn-primary">Log in</button>
+          <button class="btn btn-outline">English</button>
+          <button class="btn btn-fill">Play</button>
+          <button class="btn btn-sm btn-outline">Browse podcasts</button>
+          <button class="btn btn-text active">Premium</button>
+          <button class="btn btn-text">Support</button>
+        </div>
+        <p class="note">One white primary per region. Outline for secondary actions, fill for paging and toggles, text for navigation. Active nav is a fill step, not an underline.</p>
+      </div>
+      <div class="comp">
+        <div class="comp-head"><h3>Search field</h3><span>40px &middot; pill &middot; fill only</span></div>
+        <div class="demo on-panel"><label class="search"><svg><use href="#i-search"/></svg><input type="search" placeholder="What do you want to play?" aria-label="Search"></label></div>
+      </div>
+      <div class="comp">
+        <div class="comp-head"><h3>Status badge</h3><span>12 / 700 &middot; pill</span></div>
+        <div class="demo on-panel"><span class="badge">Default</span><span class="badge warning">Warning</span><span class="badge danger">Error</span></div>
+      </div>
+      <div class="comp">
+        <div class="comp-head"><h3>Table</h3><span>zebra on fill steps &middot; no row rules</span></div>
+        <div class="demo on-panel" style="display:block">
+          <div class="table-wrap" style="background:var(--bg-elevated)">
+            <table>
+              <thead><tr><th>#</th><th>Title</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr style="background:var(--bg-highlight)"><td>1</td><td><b>Create your first playlist</b></td><td>It's easy, we'll help you</td></tr>
+                <tr><td>2</td><td><b>Let's find some podcasts to follow</b></td><td>We'll keep you updated on new episodes</td></tr>
+                <tr style="background:var(--bg-highlight)"><td>3</td><td><b>Preview of Spotify</b></td><td>No credit card needed.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="layout">
+      <h2>Layout</h2>
+      <p class="lede">Everything sits on the <code>bg-base</code> ground with an 8px outer margin and 8px gaps: a top bar, an optional announcement under it, then panels. Spotify's own layout is three regions, all separated by 8px: a top bar, the Library panel and the main view.</p>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-nav"><b>GOMMA</b><span style="color:var(--text-subdued);font-size:14px">Your Library</span><span class="grow"></span><span class="btn btn-sm btn-text">Premium</span><span class="btn btn-sm btn-text">Support</span><span class="btn btn-sm btn-primary">Log in</span></div>
+        <div class="surface blue arcs" style="min-height:64px"><svg class="arcs-art" viewBox="0 0 471 257" aria-hidden="true"><use href="#arcs"/></svg></div>
+        <div class="mock-kpis">
+          <div class="plain" style="min-height:80px"></div>
+          <div class="plain" style="min-height:80px"></div>
+          <div class="plain" style="min-height:80px"></div>
+        </div>
+        
+        <div class="mock-panel"><div class="lp-input" style="max-width:240px"></div><div class="lp-card"><div class="line w"></div></div><div class="lp-card" style="background:var(--bg-elevated)"><div class="line w"></div></div><div class="lp-card"><div class="line w"></div></div></div>
+      </div>
+      <p class="note">Motion: buttons scale to 1.04 over about 33ms; rows and menus step their fill. No entrance animations in the chrome.</p>
+    </section>
+
+    <section class="panel" id="voice">
+      <h2>Voice</h2>
+      <p class="lede">Short, casual, second person. Sentence case, no exclamation marks in the chrome. Button labels are one to three word verbs.</p>
+      <div class="voice">
+        <div><q>What do you want to play?</q><span>Search placeholder</span></div>
+        <div><q>It's easy, we'll help you</q><span>Onboarding card</span></div>
+        <div><q>Let's find some podcasts to follow</q><span>Empty state</span></div>
+        <div><q>No credit card needed.</q><span>Promo reassurance</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="start">
+      <h2>Start a project</h2>
+      <p class="lede">The base is brand-agnostic. A project adds one brand, imports four CSS files and follows the pair rule.</p>
+      <ul class="apply">
+        <li><b>1. Generate your brand.</b> <code>python3 tools/brand.py "#2d4fb3" --name brand --out brands/brand.css</code>. It writes the ramp (levels 0 to 5 plus vivid 6) and four pairs: <code>brand</code>, <code>brand-vivid</code>, <code>brand-paper</code>, <code>brand-mist</code>. Every ink and soft ink is searched until it passes 4.5:1, tested across the sheen. Add <code>--vivid "&lt;hex&gt;"</code> to set the vivid fill yourself; it warns, and suggests a lighter one, if no ink can pass 4.5:1 on it.</li>
+        <li><b>2. Import the CSS.</b> In order: <code>css/tokens.css</code>, <code>css/pairs.css</code>, your <code>brands/brand.css</code>, and for shadcn + Tailwind v4 <code>css/shadcn-theme.css</code>.</li>
+        <li><b>3. Set the shell.</b> <code>&lt;html class="dark"&gt;</code> and <code>&lt;body data-pair="ground"&gt;</code>. Set <code>--font-ui</code> to your typeface and use weights 400 and 700.</li>
+        <li><b>4. Use pairs, always.</b> Panels and cards are <code>data-pair="panel"</code>, inputs and zebra rows <code>raised</code>, menus <code>press</code>, status <code>warning</code> and <code>danger</code>. Highlights use <code>react/tint-surface.tsx</code> with a brand pair. Copy <code>CLAUDE.template.md</code> into the project as <code>CLAUDE.md</code> so the rule is enforced in every session.</li>
+        <li><b>5. shadcn.</b> <code>shadcn/</code> holds retuned button, card, input, table, badge, dropdown-menu and avatar (base-ui style). They read the pairs; drop them over the generated ones.</li>
+        <li><b>6. Decoration.</b> <code>react/decor-shader.tsx</code> with <code>lib/decor-shader.ts</code> renders the gradient and ribbons as a shader; set <code>--decor-a</code> and <code>--decor-b</code> to your brand's vivid fills. <code>decor/</code> and <code>react/decor-sweep.tsx</code> are the SVG versions and the fallback. One highlight surface per view, under the navbar.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="tokens">
+      <h2>CSS tokens</h2>
+      <p class="lede">Mirrored in <code>src/app/globals.css</code> as the dark theme.</p>
+<pre>:root {
+  --bg-base: #0c0c0c;      --bg-elevated: #1c1c1e;
+  --bg-highlight: #252528; --bg-press: #2f2f33;   --bg-tinted: #3f3f43;
+  --text-base: #fafafa;    --text-subdued: #a1a1aa; --text-muted: #71717a;
+  --accent: #60a5fa;       --inverted: #fafafa;   --on-inverted: #09090b;
+  --border-essential: #7c7c82;
+  --tint-neutral: #1c1c1e; --tint-blue: var(--blue-3); --tint-teal: var(--teal-3);
+  --blue-0: #000e22; --blue-1: #001f3c; --blue-2: #003359;
+  --blue-3: #014d78; --blue-4: #1c5d88; --blue-5: #306b95;
+  --blue-6: #019df7;      --teal-6: #03c3bb;
+  --on-blue-vivid: #00051e; --on-blue-vivid-subdued: #000823;
+  --on-teal-vivid: #000a09; --on-teal-vivid-subdued: #002724;
+  --on-blue-subdued: #d0d9e0; --on-blue-muted: #adb9c3;
+  --teal-0: #001211; --teal-1: #002523; --teal-2: #003b38;
+  --teal-3: #015c59; --teal-4: #206c68; --teal-5: #357a76;
+  --on-teal-subdued: #d0dad9; --on-teal-muted: #adbbb9;
+  --sheen: linear-gradient(111.4deg, rgba(0,0,0,.2) 2%, rgba(102,102,102,.2) 95%);
+  --warning-bg: #433f0b;   --warning-fg: #fde68a;
+  --danger-bg: #7f1d1d;    --danger-fg: #fca5a5;
+  --space: 4 8 12 16 20 24 32 40;
+  --radius: 4 8 16 pill circle;
+  --control-lg: 40px;      --control-sm: 32px;
+}</pre>
+    </section>
+    <footer>Spotify-developed GOMMA design system v1. Surface logic adapted from the Spotify web design system reference; tint and texture from the GOMMA Figma custom design, used for highlights only.</footer>
+  </main>
+</div>
+</body>
+</html>

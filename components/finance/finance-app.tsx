@@ -62,7 +62,7 @@ export function FinanceView() {
   if (error) {
     return (
       <Shell>
-        <p className="text-muted-foreground">Unavailable</p>
+        <p className="text-ink-soft">Unavailable</p>
       </Shell>
     )
   }
@@ -128,7 +128,7 @@ export function FinanceView() {
             type="button"
             onClick={() => setArchive((v) => !v)}
             aria-pressed={archive}
-            className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-(--pair-raised-surface) px-4 font-bold outline-none transition-colors hover:bg-(--pair-strong-surface) focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-ink aria-pressed:text-surface"
           >
             <SparklesIcon className="size-4" aria-hidden />
             Reports
@@ -183,7 +183,7 @@ export function FinanceView() {
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Profit and loss</CardTitle>
-            <Badge>To date</Badge>
+            <Badge variant="secondary">To date</Badge>
           </CardHeader>
           <CardContent>
             <Table>
@@ -208,12 +208,12 @@ export function FinanceView() {
                     ["Net cash flow", actual.cashFlow, plan.cashFlow, true],
                   ] as [string, number, number, boolean][]
                 ).map(([name, a, f, strong]) => (
-                  <TableRow key={name} className={cn(strong && "bg-secondary")}>
+                  <TableRow key={name} className={cn(strong && "bg-(--pair-raised-surface)")}>
                     <TableCell className={cn(strong && "font-bold")}>{name}</TableCell>
                     <TableCell className={cn("text-right", strong && "font-bold")}>
                       {money(a)}
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">{money(f)}</TableCell>
+                    <TableCell className="text-right text-ink-soft">{money(f)}</TableCell>
                     <TableCell className="text-right">{signedMoney(a - f)}</TableCell>
                   </TableRow>
                 ))}
@@ -226,7 +226,7 @@ export function FinanceView() {
                   <TableRow key={name}>
                     <TableCell>{name}</TableCell>
                     <TableCell className="text-right">{pct(a)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{pct(f)}</TableCell>
+                    <TableCell className="text-right text-ink-soft">{pct(f)}</TableCell>
                     <TableCell className="text-right">
                       {a === null || f === null
                         ? "—"
@@ -270,7 +270,7 @@ export function FinanceView() {
                       aria-pressed={m.month === selected}
                       onClick={() => setSelected(m.month)}
                       onKeyDown={(e) => e.key === "Enter" && setSelected(m.month)}
-                      className={cn("cursor-pointer", m.month === selected && "bg-secondary")}
+                      className={cn("cursor-pointer", m.month === selected && "bg-(--pair-raised-surface)")}
                     >
                       <TableCell className="font-bold">
                         {monthName(m.month)}
@@ -279,11 +279,11 @@ export function FinanceView() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">{money(rev?.actual ?? 0)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                      <TableCell className="text-right text-ink-soft">
                         {money(rev?.forecast ?? 0)}
                       </TableCell>
                       <TableCell className="text-right">{money(cost?.actual ?? 0)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                      <TableCell className="text-right text-ink-soft">
                         {money(cost?.forecast ?? 0)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -338,7 +338,7 @@ export function FinanceView() {
               <select
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
-                className="h-9 rounded-full bg-secondary px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+                className="h-9 rounded-full bg-(--pair-raised-surface) px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
               >
                 {data.months.map((m) => (
                   <option key={m.month} value={m.month}>
@@ -364,7 +364,7 @@ export function FinanceView() {
                   <TableRow key={l.line} className={cn(l.off && "bg-destructive/20")}>
                     <TableCell className="font-bold">{l.line}</TableCell>
                     <TableCell className="text-right">{money(l.actual)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
+                    <TableCell className="text-right text-ink-soft">
                       {money(l.forecast)}
                     </TableCell>
                     <TableCell className="text-right">{signedMoney(l.difference)}</TableCell>
@@ -400,10 +400,10 @@ export function FinanceView() {
                   const inflow = t.type === "Revenue" || t.type === "Transfer In"
                   return (
                     <TableRow key={`${t.date}-${i}`}>
-                      <TableCell className="text-muted-foreground">{t.date}</TableCell>
+                      <TableCell className="text-ink-soft">{t.date}</TableCell>
                       <TableCell className="max-w-72 truncate">{t.transaction}</TableCell>
-                      <TableCell className="text-muted-foreground">{t.category}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-ink-soft">{t.category}</TableCell>
+                      <TableCell className="text-ink-soft">
                         {t.account} {t.accountMask}
                       </TableCell>
                       <TableCell className={cn("text-right", inflow && "text-success")}>
@@ -512,14 +512,14 @@ function ReviewWidget({
   if (!archive && (reviewSaved || dismissed)) return null
 
   return (
-    <section className="rounded-lg bg-accent">
+    <section className="rounded-lg bg-(--pair-press-surface)">
       <div className="flex items-stretch">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="finance-report"
-          className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg p-5 text-left outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring"
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg p-5 text-left outline-none transition-colors hover:bg-(--pair-strong-surface) focus-visible:ring-[3px] focus-visible:ring-ring"
         >
           <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
             <SparklesIcon className="size-5 shrink-0" aria-hidden />
@@ -528,8 +528,8 @@ function ReviewWidget({
             </span>
             {!archive && (
               <>
-                <Badge>{monthName(reviewMonth.month)}</Badge>
-                {!closed && <Badge>Partial</Badge>}
+                <Badge variant="secondary">{monthName(reviewMonth.month)}</Badge>
+                {!closed && <Badge variant="secondary">Partial</Badge>}
                 <Badge variant={reviewMonth.off === 0 ? "success" : "danger"}>
                   {reviewMonth.onTrack} / {reviewMonth.lines.length}
                 </Badge>
@@ -551,7 +551,7 @@ function ReviewWidget({
             onClick={closeReport}
             disabled={busy}
             aria-label={saved || !storage || archive ? "Close report" : "Save and close report"}
-            className="m-3 flex size-10 shrink-0 items-center justify-center self-center rounded-full bg-primary text-primary-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
+            className="m-3 flex size-10 shrink-0 items-center justify-center self-center rounded-full bg-ink text-surface outline-none transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
           >
             <XIcon className="size-5" aria-hidden />
           </button>
@@ -566,7 +566,7 @@ function ReviewWidget({
               <select
                 value={picked}
                 onChange={(e) => setPicked(e.target.value)}
-                className="h-9 rounded-full bg-secondary px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+                className="h-9 rounded-full bg-(--pair-raised-surface) px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
               >
                 {choices.map((c) => (
                   <option key={c} value={c}>
@@ -577,16 +577,16 @@ function ReviewWidget({
               </select>
             </label>
             {saved && stored && <Badge variant="success">Saved {savedOn(stored.savedAt)}</Badge>}
-            {!saved && storage && <Badge>Not saved</Badge>}
-            {!storage && <Badge>Storage unavailable</Badge>}
+            {!saved && storage && <Badge variant="secondary">Not saved</Badge>}
+            {!storage && <Badge variant="secondary">Storage unavailable</Badge>}
             {failed && <Badge variant="danger">Not saved</Badge>}
-            {busy && <Badge>Saving</Badge>}
+            {busy && <Badge variant="secondary">Saving</Badge>}
             {stored && live && storage && (
               <button
                 type="button"
                 onClick={save}
                 disabled={busy}
-                className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-(--pair-raised-surface) px-4 font-bold outline-none transition-colors hover:bg-(--pair-strong-surface) focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
               >
                 <RefreshCwIcon className="size-4" aria-hidden />
                 Update
@@ -597,13 +597,13 @@ function ReviewWidget({
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <div className="flex flex-col gap-3">
               <div>
-                <p className="text-sm text-muted-foreground">{monthName(month.month)}</p>
+                <p className="text-sm text-ink-soft">{monthName(month.month)}</p>
                 <p className="text-3xl font-bold">
                   {month.onTrack} / {total}
                 </p>
               </div>
               <div
-                className="h-2 w-full overflow-hidden rounded-full bg-tinted"
+                className="h-2 w-full overflow-hidden rounded-full bg-(--pair-strong-surface)"
                 role="img"
                 aria-label={`${month.onTrack} of ${total} lines on track`}
               >
@@ -615,24 +615,24 @@ function ReviewWidget({
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {key.map((l) => (
-                <div key={l.line} className="rounded-md bg-secondary p-4">
-                  <p className="text-sm text-muted-foreground">{l.line}</p>
+                <div key={l.line} className="rounded-md bg-(--pair-raised-surface) p-4">
+                  <p className="text-sm text-ink-soft">{l.line}</p>
                   <p className="text-xl font-bold">{money(l.actual)}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-ink-soft">
                     {money(l.forecast)} · {signedMoney(l.difference)}
                   </p>
                 </div>
               ))}
-              <div className="rounded-md bg-secondary p-4">
-                <p className="text-sm text-muted-foreground">Operating margin</p>
+              <div className="rounded-md bg-(--pair-raised-surface) p-4">
+                <p className="text-sm text-ink-soft">Operating margin</p>
                 <p className="text-xl font-bold">{pct(reportMargin)}</p>
-                <p className="text-xs text-muted-foreground">{pct(reportPlanMargin)} forecast</p>
+                <p className="text-xs text-ink-soft">{pct(reportPlanMargin)} forecast</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-md bg-secondary p-4">
-            <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+          <div className="rounded-md bg-(--pair-raised-surface) p-4">
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-widest text-ink-soft uppercase">
               <SparklesIcon className="size-3" aria-hidden />
               To improve
             </p>
@@ -666,7 +666,7 @@ function ReviewWidget({
                   <TableRow key={l.line}>
                     <TableCell className="font-bold">{l.line}</TableCell>
                     <TableCell className="text-right">{money(l.actual)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
+                    <TableCell className="text-right text-ink-soft">
                       {money(l.forecast)}
                     </TableCell>
                     <TableCell className="text-right">{signedMoney(l.difference)}</TableCell>

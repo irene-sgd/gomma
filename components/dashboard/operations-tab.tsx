@@ -70,7 +70,7 @@ export function OperationsTab({ live }: { live?: LiveData }) {
                     {t.name}
                   </span>
                   <Badge variant="active">{t.status}</Badge>
-                  <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">
+                  <span className="w-20 shrink-0 text-right text-xs text-ink-soft">
                     {t.due}
                   </span>
                 </Tile>
@@ -106,7 +106,7 @@ export function OperationsTab({ live }: { live?: LiveData }) {
                     className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: taskStatusConfig[key].color }}
                   />
-                  <span className="flex-1 text-muted-foreground">
+                  <span className="flex-1 text-ink-soft">
                     {taskStatusConfig[key].label}
                   </span>
                   <span className="font-bold">{counts[key]}</span>
