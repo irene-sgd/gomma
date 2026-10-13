@@ -17,7 +17,7 @@ const H = ['Transaction', 'Type', 'Amount', 'Category', 'Realm', 'Status', 'Paym
 const row = (o) => [o.t ?? 'x', o.type, o.amount, o.cat ?? '', o.realm ?? 'Business', 'Completed', '', o.date ?? '5/10/2026', o.notes ?? '', o.acc ?? 'Reserve', 'THB', '', '100-8-46850-4'];
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const monthHead = (ym) => `${MON[Number(ym.slice(5)) - 1]} ${ym.slice(0, 4)}`;
-// values: Revenue, Operating costs, Tax reserve, Equipment fund, Owner salary, Norway transfer, Closing cash
+// values: Revenue, Operating costs, Tax reserve, Equipment fund, Owner salary, Owner transfers, Closing cash
 const forecastWide = (months, valuesFor) => {
   const v = months.map(valuesFor);
   const row = (label, i, fmt = (n) => n) => [label, ...v.map((x) => fmt(x[i]))];
@@ -63,12 +63,23 @@ test('scope: Personal, archived and unscoped accounts never reach the rows', () 
   assert.ok(serialised.includes('x8117'));
 });
 
+test('transfer labels are neutral business terms, never the free text', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const rows = businessRows([H,
+    row({ type: 'Transfer Out', amount: '25000', t: 'Transfer - Norway trip 2027 funding to KMake' }),
+    row({ type: 'Transfer In', amount: '1000', t: 'Transfer - Debts repaid from KMake' }),
+    row({ type: 'Expense', amount: '76', t: 'Transport - bolt', cat: 'Transport' }),
+  ], accounts);
+  const labels = publicTransactions(rows).map((t) => t.transaction).sort();
+  assert.deepEqual(labels, ['Owner transfer', 'Transfer In', 'Transport - bolt']);
+});
+
 test('personal account names inside business transaction labels are redacted', () => {
   const accounts = parseAccounts(ACCOUNTS);
   const rows = businessRows([H, row({ type: 'Transfer Out', amount: '25000', t: 'Transfer - salary to KMake Kasikorn Wallet' }), row({ type: 'Transfer In', amount: '1', t: 'Debts repaid from kmake' })], accounts);
   const text = JSON.stringify(publicTransactions(rows));
   assert.ok(!/kmake/i.test(text));
-  assert.ok(text.includes('salary to personal'));
+  assert.ok(text.includes('Owner salary') && !text.includes('salary to'));
   assert.equal(monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0]))).lines.find((l) => l.line === 'Owner salary').actual, 25000);
 });
 
@@ -119,7 +130,7 @@ test('transfers route to salary / norway / tax; borrow is not salary', () => {
   ], accounts);
   const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
   const get = (n) => m.lines.find((l) => l.line === n).actual;
-  assert.deepEqual([get('Owner salary'), get('Norway transfer'), get('Tax reserve')], [25000, 25000, 5000]);
+  assert.deepEqual([get('Owner salary'), get('Owner transfers'), get('Tax reserve')], [25000, 25000, 5000]);
 });
 
 test('closing cash = opening + in - out on Business accounts up to month end', () => {
@@ -131,7 +142,7 @@ test('closing cash = opening + in - out on Business accounts up to month end', (
     row({ type: 'Revenue', amount: '9999', date: '30/6/2026' }),
   ], accounts);
   const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 1300])));
-  assert.equal(m.lines.find((l) => l.line === 'Closing Reserve cash').actual, 1000 + 500 - 200);
+  assert.equal(m.lines.find((l) => l.line === 'Closing cash').actual, 1000 + 500 - 200);
 });
 
 test('forecast model: wide layout, (negatives), "-" zeros and collaborators folded into operating costs', () => {
@@ -150,7 +161,7 @@ test('forecast model: wide layout, (negatives), "-" zeros and collaborators fold
   assert.deepEqual(Object.keys(f), ['2026-10', '2027-01']);
   assert.equal(f['2026-10']['Operating costs'], 7180);
   assert.equal(f['2027-01']['Operating costs'], 7180 + 4680);
-  assert.equal(f['2026-10']['Closing Reserve cash'], -7361);
+  assert.equal(f['2026-10']['Closing cash'], -7361);
   assert.equal(f['2026-10'].Revenue, 53387);
   assert.equal(f['2027-01']['Tax reserve'], 3408.7);
   assert.throws(() => parseForecast(rows.filter((r) => r[0] !== 'Owner salary')), FinanceDataError);

@@ -3,7 +3,7 @@
 
 export class FinanceDataError extends Error {}
 
-export const LINES = ['Revenue', 'Operating costs', 'Tax reserve', 'Equipment fund', 'Owner salary', 'Norway transfer', 'Closing Reserve cash'];
+export const LINES = ['Revenue', 'Operating costs', 'Tax reserve', 'Equipment fund', 'Owner salary', 'Owner transfers', 'Closing cash'];
 
 const PASS_THROUGH_CATEGORIES = ['royalties', 'loan - sister'];
 const PASS_THROUGH_TRANSFER_WORDS = /bitcoin|btc|binance/i;
@@ -80,8 +80,8 @@ const FORECAST_ROWS = {
   'Tax reserve': ['Tax reserve'],
   'Equipment fund': ['Equipment fund'],
   'Owner salary': ['Owner salary'],
-  'Norway transfer': ['Owner goal transfers'],
-  'Closing Reserve cash': ['Closing studio cash'],
+  'Owner transfers': ['Owner goal transfers'],
+  'Closing cash': ['Closing studio cash'],
 };
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
@@ -188,7 +188,7 @@ export function transferLine(row) {
   if (row.type !== 'Transfer Out') return null;
   const t = row._text;
   if (/salary/.test(t) && !/borrow/.test(t)) return 'Owner salary';
-  if (/norway/.test(t)) return 'Norway transfer';
+  if (/norway/.test(t)) return 'Owner transfers';
   if (/\btax\b/.test(t)) return 'Tax reserve';
   if (/equipment/.test(t)) return 'Equipment fund';
   return null;
@@ -235,13 +235,21 @@ export function monthSummary(month, rows, accounts, forecast) {
     'Tax reserve': transfers['Tax reserve'],
     'Equipment fund': transfers['Equipment fund'],
     'Owner salary': transfers['Owner salary'],
-    'Norway transfer': transfers['Norway transfer'],
-    'Closing Reserve cash': closing,
+    'Owner transfers': transfers['Owner transfers'],
+    'Closing cash': closing,
   };
   const lines = LINES.map((line) => ({ line, ...compare(actual[line], f[line]) }));
   const off = lines.filter((l) => l.off).length;
   return { month, lines, onTrack: lines.length - off, off };
 }
+
+// Neutral labels for transfers: the free text on a transfer is often personal context.
+const TRANSFER_LABEL = {
+  'Owner salary': 'Owner salary',
+  'Owner transfers': 'Owner transfer',
+  'Tax reserve': 'Tax reserve',
+  'Equipment fund': 'Equipment fund',
+};
 
 // Safe-to-serialise transactions for the recent list (no notes, no full account number).
 export function publicTransactions(rows, limit = 50) {
@@ -249,5 +257,13 @@ export function publicTransactions(rows, limit = 50) {
     .filter((r) => !isPassThrough(r) && !isPersonalSpend(r))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, limit)
-    .map(({ date, type, amount, category, transaction, account, accountMask }) => ({ date, type, amount, category, transaction, account, accountMask }));
+    .map((r) => ({
+      date: r.date,
+      type: r.type,
+      amount: r.amount,
+      category: r.category,
+      transaction: r.type.startsWith('Transfer') ? TRANSFER_LABEL[transferLine(r)] || r.type : r.transaction,
+      account: r.account,
+      accountMask: r.accountMask,
+    }));
 }
