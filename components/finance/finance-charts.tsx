@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { Bar, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import {
   ChartContainer,
@@ -13,6 +13,8 @@ import { money } from "@/lib/finance"
 const flowConfig = {
   revenue: { label: "Revenue", color: "var(--chart-1)" },
   costs: { label: "Operating costs", color: "var(--chart-3)" },
+  revenueForecast: { label: "Revenue forecast", color: "var(--chart-2)" },
+  costsForecast: { label: "Costs forecast", color: "var(--chart-5)" },
 } satisfies ChartConfig
 
 const cashConfig = {
@@ -36,11 +38,18 @@ const tooltip = (config: ChartConfig) => (
 export function FlowChart({
   data,
 }: {
-  data: { month: string; revenue: number; costs: number }[]
+  data: {
+    month: string
+    revenue: number | null
+    costs: number | null
+    revenueForecast: number
+    costsForecast: number
+  }[]
 }) {
   return (
     <ChartContainer config={flowConfig} className="aspect-auto h-56 w-full">
-      <BarChart data={data} margin={{ left: 4, right: 4 }}>
+      <ComposedChart data={data} margin={{ left: 4, right: 4 }}>
+        <CartesianGrid vertical={false} stroke="var(--tinted)" />
         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
         <YAxis
           tickLine={false}
@@ -51,7 +60,21 @@ export function FlowChart({
         <ChartTooltip cursor={{ fill: "var(--accent)" }} content={tooltip(flowConfig)} />
         <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
         <Bar dataKey="costs" fill="var(--color-costs)" radius={4} />
-      </BarChart>
+        <Line
+          dataKey="revenueForecast"
+          stroke="var(--color-revenueForecast)"
+          strokeWidth={2}
+          strokeDasharray="4 4"
+          dot={false}
+        />
+        <Line
+          dataKey="costsForecast"
+          stroke="var(--color-costsForecast)"
+          strokeWidth={2}
+          strokeDasharray="4 4"
+          dot={false}
+        />
+      </ComposedChart>
     </ChartContainer>
   )
 }
