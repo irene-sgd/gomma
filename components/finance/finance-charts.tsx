@@ -114,3 +114,67 @@ export function CashChart({
     </ChartContainer>
   )
 }
+
+const marginConfig = {
+  operating: { label: "Operating margin", color: "var(--chart-1)" },
+  net: { label: "Net margin", color: "var(--chart-2)" },
+  operatingForecast: { label: "Operating forecast", color: "var(--chart-1)" },
+  netForecast: { label: "Net forecast", color: "var(--chart-2)" },
+} satisfies ChartConfig
+
+export function MarginChart({
+  data,
+}: {
+  data: {
+    month: string
+    operating: number | null
+    net: number | null
+    operatingForecast: number | null
+    netForecast: number | null
+  }[]
+}) {
+  return (
+    <ChartContainer config={marginConfig} className="aspect-auto h-56 w-full">
+      <LineChart data={data} margin={{ left: 4, right: 4 }}>
+        <CartesianGrid vertical={false} stroke="var(--tinted)" />
+        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={(v: number) => `${v}%`}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name) => (
+                <span className="flex w-full items-center justify-between gap-4">
+                  <span className="text-muted-foreground">
+                    {marginConfig[name as keyof typeof marginConfig]?.label ?? name}
+                  </span>
+                  <span className="font-bold">{Math.round(Number(value))}%</span>
+                </span>
+              )}
+            />
+          }
+        />
+        <Line
+          dataKey="operatingForecast"
+          stroke="var(--color-operatingForecast)"
+          strokeWidth={2}
+          strokeDasharray="4 4"
+          dot={false}
+        />
+        <Line
+          dataKey="netForecast"
+          stroke="var(--color-netForecast)"
+          strokeWidth={2}
+          strokeDasharray="4 4"
+          dot={false}
+        />
+        <Line dataKey="operating" stroke="var(--color-operating)" strokeWidth={2} dot />
+        <Line dataKey="net" stroke="var(--color-net)" strokeWidth={2} dot />
+      </LineChart>
+    </ChartContainer>
+  )
+}
