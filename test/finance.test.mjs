@@ -354,3 +354,20 @@ test('a second Business account adds to cash, and moves between them change neit
   assert.equal(get('Operating costs'), 50);
   assert.equal(get('Closing cash'), 1000 + 500 + 1000 - 50);
 });
+
+test('personal-realm revenue and refunds never count as business income or reduce business costs', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const rows = businessRows([H,
+    row({ type: 'Revenue', amount: '1000', cat: 'Client Payment' }),
+    row({ type: 'Revenue', amount: '179', cat: 'Refund', realm: 'Personal' }),
+    row({ type: 'Revenue', amount: '1', cat: 'Other', realm: 'Personal' }),
+    row({ type: 'Revenue', amount: '50', cat: 'Refund', realm: 'Business' }),
+    row({ type: 'Expense', amount: '400', cat: 'Software' }),
+  ], accounts);
+  const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
+  const get = (n) => m.lines.find((l) => l.line === n).actual;
+  assert.equal(get('Revenue'), 1000);
+  assert.equal(get('Operating costs'), 400 - 50);
+  // The money is real, so cash still includes every row.
+  assert.equal(get('Closing cash'), 1000 + 1000 + 179 + 1 + 50 - 400);
+});
