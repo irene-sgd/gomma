@@ -41,9 +41,10 @@ test('D/M/Y parsing is day first and rejects impossible dates', () => {
 });
 
 test('account numbers are masked to x + last 4, never full', () => {
-  assert.equal(maskAccount('240-2-88117-0'), 'x8117');
-  assert.equal(maskAccount('XXX-X-XX850-4'), '');
-  assert.equal(maskAccount('100-8-46850-4'), 'x6850');
+  assert.equal(maskAccount('240-2-88117-0'), 'x1170');
+  assert.equal(maskAccount('240-2-98118-3'), 'x1183');
+  assert.equal(maskAccount('100-8-46850-4'), 'x8504');
+  assert.equal(maskAccount('12'), '');
   assert.equal(maskAccount(''), '');
 });
 
@@ -60,7 +61,7 @@ test('scope: Personal, archived and unscoped accounts never reach the rows', () 
   assert.equal(rows[0].account, 'Reserve');
   const serialised = JSON.stringify(publicTransactions(rows));
   assert.ok(!serialised.includes('KMake') && !serialised.includes('88117-0') && !serialised.includes('46850'));
-  assert.ok(serialised.includes('x8117'));
+  assert.ok(serialised.includes('x1170'));
 });
 
 test('transfer labels are neutral business terms, never the free text', () => {
@@ -347,7 +348,7 @@ test('a second Business account adds to cash, and moves between them change neit
     row({ type: 'Transfer In', amount: '300', cat: 'Internal Transfer', t: 'From Reserve', acc: 'Budget Wallet' }),
     row({ type: 'Expense', amount: '50', cat: 'Software', acc: 'Budget Wallet' }),
   ], accounts);
-  assert.equal(accounts.find((a) => a.name === 'Budget Wallet').mask, 'x8118');
+  assert.equal(accounts.find((a) => a.name === 'Budget Wallet').mask, 'x1183');
   const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
   const get = (n) => m.lines.find((l) => l.line === n).actual;
   assert.equal(get('Revenue'), 1000);

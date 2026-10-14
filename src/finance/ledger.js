@@ -30,11 +30,10 @@ export function parseDMY(text) {
   return { y, m: mo, d, iso: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`, month: `${y}-${String(mo).padStart(2, '0')}` };
 }
 
-// KBank numbers end in a one-digit check group (240-2-88117-0 -> x8117).
+// Bank style: x + the last 4 digits of the full number, as the bank's own statements disclose it
+// (240-2-88117-0 -> x1170). Numbers with fewer than 4 digits show nothing.
 export function maskAccount(number) {
-  const groups = String(number ?? '').split(/[^0-9]+/).filter(Boolean);
-  if (groups.length > 1 && groups[groups.length - 1].length === 1) groups.pop();
-  const digits = groups.join('');
+  const digits = String(number ?? '').replace(/\D/g, '');
   return digits.length >= 4 ? `x${digits.slice(-4)}` : '';
 }
 
