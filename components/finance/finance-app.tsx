@@ -234,43 +234,6 @@ export function FinanceView() {
 
         <Card>
           <CardHeader>
-            <SectionLabel>Months</SectionLabel>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Operating costs</TableHead>
-                  <TableHead className="text-right">Operating profit</TableHead>
-                  <TableHead className="text-right">Margin</TableHead>
-                  <TableHead className="text-right">Net cash flow</TableHead>
-                  <TableHead className="text-right">Closing cash</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={r.month.month}>
-                    <TableCell className="font-bold">
-                      {monthName(r.month.month)}
-                      {r.month.status === "current" && <Badge className="ml-2">Partial</Badge>}
-                    </TableCell>
-                    <TableCell className="text-right">{money(r.a.revenue)}</TableCell>
-                    <TableCell className="text-right">{money(r.a.costs)}</TableCell>
-                    <TableCell className="text-right">{money(r.a.operating)}</TableCell>
-                    <TableCell className="text-right">{pct(r.margin)}</TableCell>
-                    <TableCell className="text-right">{money(r.a.cashFlow)}</TableCell>
-                    <TableCell className="text-right">{money(r.cash)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle>Transactions</CardTitle>
           </CardHeader>
           <CardContent>
