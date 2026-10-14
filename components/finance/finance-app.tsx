@@ -123,6 +123,29 @@ export function FinanceView() {
           }}
         />
 
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+          <Metric
+            label="Cash"
+            value={money(cash)}
+            hint="Business accounts"
+            tone={cash < 0 ? "default" : "success"}
+          />
+          <Metric label="Revenue" value={money(total.revenue)} hint="To date" />
+          <Metric
+            label="Operating profit"
+            value={money(total.operating)}
+            hint={`${pct(opMargin)} margin`}
+            tone={total.operating < 0 ? "default" : "success"}
+          />
+          <Metric
+            label="Net profit"
+            value={money(total.net)}
+            hint={`${pct(netMargin)} margin`}
+            tone={total.net < 0 ? "default" : "success"}
+          />
+          <Metric label="Net cash flow" value={money(total.cashFlow)} hint="To date" />
+        </div>
+
         <Card>
           <CardHeader>
             <SectionLabel>Revenue and costs</SectionLabel>
@@ -165,29 +188,6 @@ export function FinanceView() {
               />
             </CardContent>
           </Card>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-          <Metric
-            label="Cash"
-            value={money(cash)}
-            hint="Business accounts"
-            tone={cash < 0 ? "default" : "success"}
-          />
-          <Metric label="Revenue" value={money(total.revenue)} hint="To date" />
-          <Metric
-            label="Operating profit"
-            value={money(total.operating)}
-            hint={`${pct(opMargin)} margin`}
-            tone={total.operating < 0 ? "default" : "success"}
-          />
-          <Metric
-            label="Net profit"
-            value={money(total.net)}
-            hint={`${pct(netMargin)} margin`}
-            tone={total.net < 0 ? "default" : "success"}
-          />
-          <Metric label="Net cash flow" value={money(total.cashFlow)} hint="To date" />
         </div>
 
         <Card>
