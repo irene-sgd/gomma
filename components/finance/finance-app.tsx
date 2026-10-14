@@ -19,23 +19,26 @@ import { CashChart, FlowChart, MarginChart, SpendPie } from "@/components/financ
 import {
   fetchFinance,
   fetchReports,
+  healthOf,
   improvements,
   line,
   margin,
   money,
   monthName,
   pct,
+  periodOf,
+  PERIODS,
   pnl,
   saveReport,
   signedMoney,
+  spendOf,
+  totalsOf,
   type FinanceData,
   type FinanceMonth,
+  type Period,
   type StoredReport,
 } from "@/lib/finance"
 import { cn } from "cn"
-
-const monthsBasis = (n: number) =>
-  n <= 1 ? "this month so far" : `an average of ${n} months`
 
 export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
@@ -43,6 +46,7 @@ export function FinanceView() {
   const [reports, setReports] = useState<Record<string, StoredReport>>({})
   const [storage, setStorage] = useState(true)
   const [archive, setArchive] = useState(false)
+  const [period, setPeriod] = useState<Period>("quarter")
 
   useEffect(() => {
     fetchReports().then((list) => {
@@ -76,40 +80,55 @@ export function FinanceView() {
     )
   }
 
-  // Everything below is actuals only. Forecast lives in the monthly report at the top.
-  const elapsed = data.months.filter((m) => m.status !== "future")
-  const total = pnl(elapsed, "actual")
-  const cash = line(elapsed.at(-1), "Closing cash")?.actual ?? 0
+  // One period drives everything below the summary report. Actuals only.
+  const history = data.history ?? []
+  const months = periodOf(history, period)
+  const total = totalsOf(months)
+  const cash = history.at(-1)?.closingCash ?? 0
+  const health = healthOf(months, cash)
+  const spend = spendOf(months)
+  const n = Math.max(months.length, 1)
   const opMargin = margin(total.operating, total.revenue)
   const netMargin = margin(total.net, total.revenue)
-  const share = (n: number) => pct(margin(n, total.revenue))
-
-  const rows = elapsed.map((m) => {
-    const a = pnl([m], "actual")
-    return {
-      month: m,
-      a,
-      margin: margin(a.operating, a.revenue),
-      netMargin: margin(a.net, a.revenue),
-      cash: line(m, "Closing cash")?.actual ?? 0,
-    }
-  })
+  const share = (v: number) => pct(margin(v, total.revenue))
+  const perMonth = (v: number) => (n > 1 ? `${money(v / n)} a month` : " ")
+  const inPeriod = new Set(months.map((m) => m.month))
+  const recent = data.transactions.filter((t) => inPeriod.has(t.date.slice(0, 7)))
   const point = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10)
+  const series = months.map((m) => {
+    const t = totalsOf([m])
+    return { m, t, label: monthName(m.month) }
+  })
 
   return (
     <Shell
       action={
-        Object.keys(reports).length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setArchive((v) => !v)}
-            aria-pressed={archive}
-            className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          >
-            <SparklesIcon className="size-4" aria-hidden />
-            Reports
-          </button>
-        ) : null
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div role="group" aria-label="Period" className="flex gap-1 rounded-full bg-secondary p-1">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => setPeriod(p.key)}
+                aria-pressed={period === p.key}
+                className="h-8 rounded-full px-3 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {Object.keys(reports).length > 0 && (
+            <button
+              type="button"
+              onClick={() => setArchive((v) => !v)}
+              aria-pressed={archive}
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+            >
+              <SparklesIcon className="size-4" aria-hidden />
+              Reports
+            </button>
+          )}
+        </div>
       }
     >
       <div className="flex flex-col gap-2">
@@ -133,7 +152,7 @@ export function FinanceView() {
             hint="Business accounts"
             tone={cash < 0 ? "default" : "success"}
           />
-          <Metric label="Revenue" value={money(total.revenue)} hint="To date" />
+          <Metric label="Revenue" value={money(total.revenue)} hint={perMonth(total.revenue)} />
           <Metric
             label="Operating profit"
             value={money(total.operating)}
@@ -146,36 +165,32 @@ export function FinanceView() {
             hint={`${pct(netMargin)} margin`}
             tone={total.net < 0 ? "default" : "success"}
           />
-          <Metric label="Net cash flow" value={money(total.cashFlow)} hint="To date" />
+          <Metric
+            label="Net cash flow"
+            value={money(total.cashFlow)}
+            hint={perMonth(total.cashFlow)}
+          />
         </div>
 
-        {data.metrics && (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Metric
-              label="Break-even revenue"
-              value={money(data.metrics.breakEven)}
-              hint={`Per month, from ${monthsBasis(data.metrics.window.length)} of real costs and salary${
-                data.metrics.taxShare > 0 ? ` and ${pct(data.metrics.taxShare)} tax reserve` : ""
-              }`}
-            />
-            <Metric
-              label="Cash runway"
-              value={
-                data.metrics.runway === null
-                  ? "—"
-                  : `${data.metrics.runway.toFixed(1)} months`
-              }
-              hint={`${money(data.metrics.cash)} at ${money(data.metrics.burn)} a month`}
-            />
-            <Metric
-              label="Largest client share"
-              value={pct(data.metrics.concentration.share)}
-              hint={`${data.metrics.concentration.clients} ${
-                data.metrics.concentration.clients === 1 ? "client" : "clients"
-              }, last 3 months`}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <Metric
+            label="Break-even revenue"
+            value={money(health.breakEven)}
+            hint={`Per month, covers costs and salary${
+              health.taxShare > 0 ? ` and ${pct(health.taxShare)} tax reserve` : ""
+            }`}
+          />
+          <Metric
+            label="Cash runway"
+            value={health.runway === null ? "—" : `${health.runway.toFixed(1)} months`}
+            hint={`${money(cash)} at ${money(health.burn)} a month`}
+          />
+          <Metric
+            label="Largest client share"
+            value={pct(health.share)}
+            hint={`${health.clients} ${health.clients === 1 ? "client" : "clients"}`}
+          />
+        </div>
 
         <Card>
           <CardHeader>
@@ -183,10 +198,10 @@ export function FinanceView() {
           </CardHeader>
           <CardContent>
             <FlowChart
-              data={rows.map((r) => ({
-                month: monthName(r.month.month),
-                revenue: r.a.revenue,
-                costs: r.a.costs,
+              data={series.map((r) => ({
+                month: r.label,
+                revenue: r.t.revenue,
+                costs: r.t.costs,
               }))}
             />
           </CardContent>
@@ -198,10 +213,10 @@ export function FinanceView() {
             </CardHeader>
             <CardContent>
               <MarginChart
-                data={rows.map((r) => ({
-                  month: monthName(r.month.month),
-                  operating: point(r.margin),
-                  net: point(r.netMargin),
+                data={series.map((r) => ({
+                  month: r.label,
+                  operating: point(margin(r.t.operating, r.t.revenue)),
+                  net: point(margin(r.t.net, r.t.revenue)),
                 }))}
               />
             </CardContent>
@@ -212,9 +227,9 @@ export function FinanceView() {
             </CardHeader>
             <CardContent>
               <CashChart
-                data={rows.map((r) => ({
-                  month: monthName(r.month.month),
-                  cash: r.cash,
+                data={series.map((r) => ({
+                  month: r.label,
+                  cash: r.m.closingCash,
                 }))}
               />
             </CardContent>
@@ -222,19 +237,17 @@ export function FinanceView() {
         </div>
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader>
             <SectionLabel>Spending by category</SectionLabel>
-            <Badge>To date</Badge>
           </CardHeader>
           <CardContent>
-            <SpendPie data={data.spend ?? []} />
+            <SpendPie data={spend} />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Profit and loss</CardTitle>
-            <Badge>To date</Badge>
           </CardHeader>
           <CardContent>
             <Table>
@@ -289,7 +302,7 @@ export function FinanceView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.transactions.slice(0, 25).map((t, i) => {
+                {recent.slice(0, 25).map((t, i) => {
                   const inflow = t.type === "Revenue" || t.type === "Transfer In"
                   return (
                     <TableRow key={`${t.date}-${i}`}>

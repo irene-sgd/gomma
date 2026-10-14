@@ -257,53 +257,46 @@ const addMonths = (month, delta) => {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 
-// Business health numbers from real ledger activity only (no forecast):
-//  burn           average monthly operating costs plus owner salary
-//  breakEven      monthly revenue that covers burn once the tax reserve share is set aside
-//  runway         current cash in months of burn
-//  concentration  the largest client's share of revenue (never the name)
-// Burn averages up to the last 3 closed months; before any month has closed, the running month.
-export function businessMetrics(rows, accounts, currentMonth) {
-  const seen = [...new Set(rows.map((r) => r.month))].sort();
-  const closed = seen.filter((m) => m < currentMonth).slice(-3);
-  const window = closed.length ? closed : [currentMonth];
-
-  const actuals = window.map((m) => monthActuals(m, rows, accounts));
-  const avg = (key) => actuals.reduce((t, a) => t + a[key], 0) / actuals.length;
-  const burn = avg('Operating costs') + avg('Owner salary');
-  const revenueTotal = actuals.reduce((t, a) => t + a.Revenue, 0);
-  const taxTotal = actuals.reduce((t, a) => t + a['Tax reserve'], 0);
-  const taxShare = revenueTotal > 0 ? Math.min(taxTotal / revenueTotal, 0.9) : 0;
-  const breakEven = burn / (1 - taxShare);
-
-  const cash = monthActuals(currentMonth, rows, accounts)['Closing cash'];
-  const runway = burn > 0 ? cash / burn : null;
-
-  // Concentration: the 3 calendar months ending now, so a quiet month does not hide a client.
-  const span = new Set([addMonths(currentMonth, -2), addMonths(currentMonth, -1), currentMonth]);
-  const byClient = new Map();
-  for (const r of rows) {
-    if (!span.has(r.month) || r.type !== 'Revenue' || isPassThrough(r) || isPersonalIncome(r)) continue;
-    if (norm(r.category) === 'refund') continue;
-    byClient.set(r.transaction, (byClient.get(r.transaction) || 0) + r.amount);
+// One entry per calendar month from the first month with business activity to the current month.
+// The page picks a period and sums these; nothing here depends on the forecast.
+// Clients get anonymous ids so shares can be added up across months without ever naming one.
+export function monthlyHistory(rows, accounts, currentMonth) {
+  const seen = rows.map((r) => r.month).sort();
+  if (!seen.length) return [];
+  const clientIds = new Map();
+  const out = [];
+  for (let m = seen[0]; m <= currentMonth; m = addMonths(m, 1)) {
+    const a = monthActuals(m, rows, accounts);
+    const inMonth = rows.filter((r) => r.month === m && !isPassThrough(r));
+    const spend = {};
+    const clients = {};
+    for (const r of inMonth) {
+      if (r.type === 'Expense' && !isPersonalSpend(r)) {
+        const key = r.category || 'Other';
+        spend[key] = Math.round(((spend[key] || 0) + r.amount) * 100) / 100;
+      }
+      if (r.type === 'Revenue' && !isPersonalIncome(r) && norm(r.category) !== 'refund') {
+        if (!clientIds.has(r.transaction)) clientIds.set(r.transaction, `c${clientIds.size + 1}`);
+        const id = clientIds.get(r.transaction);
+        clients[id] = Math.round(((clients[id] || 0) + r.amount) * 100) / 100;
+      }
+    }
+    const round = (n) => Math.round(n * 100) / 100;
+    out.push({
+      month: m,
+      status: m < currentMonth ? 'past' : 'current',
+      revenue: round(a.Revenue),
+      operatingCosts: round(a['Operating costs']),
+      taxReserve: round(a['Tax reserve']),
+      equipmentFund: round(a['Equipment fund']),
+      ownerSalary: round(a['Owner salary']),
+      ownerTransfers: round(a['Owner transfers']),
+      closingCash: round(a['Closing cash']),
+      spend,
+      clients,
+    });
   }
-  const total = [...byClient.values()].reduce((t, v) => t + v, 0);
-  const top = Math.max(0, ...byClient.values());
-  const round = (n) => Math.round(n * 100) / 100;
-
-  return {
-    window,
-    burn: round(burn),
-    taxShare: Math.round(taxShare * 1000) / 1000,
-    breakEven: round(breakEven),
-    cash: round(cash),
-    runway: runway === null ? null : Math.round(runway * 10) / 10,
-    concentration: {
-      share: total > 0 ? Math.round((top / total) * 1000) / 1000 : null,
-      clients: byClient.size,
-      months: [...span].sort(),
-    },
-  };
+  return out;
 }
 
 // Neutral labels for transfers: the free text on a transfer is often personal context.

@@ -26,22 +26,25 @@ export type FinanceTxn = {
   accountMask: string
 }
 
-export type FinanceMetrics = {
-  window: string[]
-  burn: number
-  taxShare: number
-  breakEven: number
-  cash: number
-  runway: number | null
-  concentration: { share: number | null; clients: number; months: string[] }
+export type HistoryMonth = {
+  month: string
+  status: "past" | "current"
+  revenue: number
+  operatingCosts: number
+  taxReserve: number
+  equipmentFund: number
+  ownerSalary: number
+  ownerTransfers: number
+  closingCash: number
+  spend: Record<string, number>
+  clients: Record<string, number>
 }
 
 export type FinanceData = {
   generatedAt: string
   currentMonth: string
   months: FinanceMonth[]
-  spend?: { category: string; amount: number }[]
-  metrics?: FinanceMetrics
+  history?: HistoryMonth[]
   transactions: FinanceTxn[]
 }
 
@@ -163,4 +166,79 @@ export function improvements(month: FinanceMonth): string[] {
     out.push(`Operating margin is ${pct(am)} against ${pct(fm)} in the forecast.`)
 
   return out
+}
+
+// One period for the whole page. Every tile, chart and table is built from the months in it.
+export type Period = "month" | "quarter" | "ytd"
+
+export const PERIODS: { key: Period; label: string }[] = [
+  { key: "month", label: "This month" },
+  { key: "quarter", label: "Last 3 months" },
+  { key: "ytd", label: "Year to date" },
+]
+
+export function periodOf(history: HistoryMonth[], period: Period): HistoryMonth[] {
+  const latest = history.at(-1)
+  if (!latest) return []
+  if (period === "month") return [latest]
+  if (period === "quarter") return history.slice(-3)
+  return history.filter((m) => m.month.slice(0, 4) === latest.month.slice(0, 4))
+}
+
+export type Totals = {
+  revenue: number
+  costs: number
+  operating: number
+  tax: number
+  salary: number
+  net: number
+  transfers: number
+  cashFlow: number
+}
+
+export function totalsOf(months: HistoryMonth[]): Totals {
+  const add = (pick: (m: HistoryMonth) => number) =>
+    months.reduce((t, m) => t + pick(m), 0)
+  const revenue = add((m) => m.revenue)
+  const costs = add((m) => m.operatingCosts)
+  const tax = add((m) => m.taxReserve)
+  const salary = add((m) => m.ownerSalary)
+  const transfers = add((m) => m.ownerTransfers)
+  const operating = revenue - costs
+  const net = operating - tax - salary
+  return { revenue, costs, operating, tax, salary, net, transfers, cashFlow: net - transfers }
+}
+
+// Burn is the average monthly operating costs plus owner salary over the closed months in the
+// period (the running month only when none has closed). Break-even sets aside the tax reserve share.
+export function healthOf(months: HistoryMonth[], cash: number) {
+  const closed = months.filter((m) => m.status === "past")
+  const basis = closed.length ? closed : months
+  const n = Math.max(basis.length, 1)
+  const t = totalsOf(basis)
+  const burn = (t.costs + t.salary) / n
+  const taxShare = t.revenue > 0 ? Math.min(t.tax / t.revenue, 0.9) : 0
+  const totals: Record<string, number> = {}
+  for (const m of months)
+    for (const [id, amount] of Object.entries(m.clients))
+      totals[id] = (totals[id] ?? 0) + amount
+  const sum = Object.values(totals).reduce((a, b) => a + b, 0)
+  return {
+    burn,
+    taxShare,
+    breakEven: burn / (1 - taxShare),
+    runway: burn > 0 ? cash / burn : null,
+    share: sum > 0 ? Math.max(...Object.values(totals)) / sum : null,
+    clients: Object.keys(totals).length,
+  }
+}
+
+export function spendOf(months: HistoryMonth[]): { category: string; amount: number }[] {
+  const totals: Record<string, number> = {}
+  for (const m of months)
+    for (const [category, amount] of Object.entries(m.spend))
+      totals[category] = (totals[category] ?? 0) + amount
+  return Object.entries(totals)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount)
 }
