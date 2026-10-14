@@ -332,3 +332,25 @@ test('reports: unknown month, wrong method and cross-origin writes are rejected'
   assert.equal((await handleReports(localReq('/api/finance/reports/2026-10', 'PUT', { Origin: 'https://evil.example' }), dev(db), { read: reportRead })).status, 403);
   assert.equal(db.rows.size, 0);
 });
+
+// ---- two business accounts (Reserve + Budget Wallet) ----
+test('a second Business account adds to cash, and moves between them change neither profit nor total cash', () => {
+  const accounts = parseAccounts([
+    ACCOUNTS[0],
+    ACCOUNTS[1],
+    ['a5', 'Budget Wallet', 'checking', 'THB', 'KBank', '240-2-98118-3', '500', '2026-10-01', '', '', 'Business'],
+    ACCOUNTS[2],
+  ]);
+  const rows = businessRows([H,
+    row({ type: 'Revenue', amount: '1000', cat: 'Project', acc: 'Reserve' }),
+    row({ type: 'Transfer Out', amount: '300', cat: 'Internal Transfer', t: 'To Budget Wallet', acc: 'Reserve' }),
+    row({ type: 'Transfer In', amount: '300', cat: 'Internal Transfer', t: 'From Reserve', acc: 'Budget Wallet' }),
+    row({ type: 'Expense', amount: '50', cat: 'Software', acc: 'Budget Wallet' }),
+  ], accounts);
+  assert.equal(accounts.find((a) => a.name === 'Budget Wallet').mask, 'x8118');
+  const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
+  const get = (n) => m.lines.find((l) => l.line === n).actual;
+  assert.equal(get('Revenue'), 1000);
+  assert.equal(get('Operating costs'), 50);
+  assert.equal(get('Closing cash'), 1000 + 500 + 1000 - 50);
+});
