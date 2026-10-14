@@ -4,8 +4,11 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   XAxis,
   YAxis,
 } from "recharts"
@@ -121,5 +124,92 @@ export function MarginChart({
         <Line dataKey="net" stroke="var(--color-net)" strokeWidth={2} dot />
       </LineChart>
     </ChartContainer>
+  )
+}
+
+const SLICES = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+]
+const sliceColor = (i: number) => SLICES[i % SLICES.length]
+
+// Operating spend by category. Everything past the fifth category folds into "Other".
+export function SpendPie({
+  data,
+}: {
+  data: { category: string; amount: number }[]
+}) {
+  const sorted = [...data].sort((a, b) => b.amount - a.amount)
+  const head = sorted.slice(0, 5)
+  const rest = sorted.slice(5).reduce((t, d) => t + d.amount, 0)
+  const slices = rest > 0 ? [...head, { category: "Other", amount: rest }] : head
+  const total = slices.reduce((t, d) => t + d.amount, 0)
+
+  if (total <= 0) {
+    return (
+      <div className="flex h-56 items-center justify-center text-muted-foreground">
+        No spending yet
+      </div>
+    )
+  }
+
+  const config = Object.fromEntries(
+    slices.map((d, i) => [d.category, { label: d.category, color: sliceColor(i) }])
+  ) as ChartConfig
+
+  return (
+    <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+      <ChartContainer config={config} className="aspect-square h-56 w-full">
+        <PieChart>
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                hideLabel
+                formatter={(value, name) => (
+                  <span className="flex w-full items-center justify-between gap-4">
+                    <span className="text-muted-foreground">{String(name)}</span>
+                    <span className="font-bold">{money(Number(value))}</span>
+                  </span>
+                )}
+              />
+            }
+          />
+          <Pie
+            data={slices}
+            dataKey="amount"
+            nameKey="category"
+            innerRadius={56}
+            outerRadius={96}
+            strokeWidth={0}
+          >
+            {slices.map((d, i) => (
+              <Cell key={d.category} fill={sliceColor(i)} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ChartContainer>
+      <ul className="flex flex-col gap-2">
+        {slices.map((d, i) => (
+          <li key={d.category} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                className="size-3 shrink-0 rounded-full"
+                style={{ background: sliceColor(i) }}
+              />
+              <span className="truncate">{d.category}</span>
+            </span>
+            <span className="shrink-0 text-right">
+              <span className="font-bold">{money(d.amount)}</span>
+              <span className="ml-2 text-muted-foreground">
+                {Math.round((d.amount / total) * 100)}%
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

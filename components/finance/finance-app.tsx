@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Metric, SectionLabel } from "@/components/dashboard/primitives"
-import { CashChart, FlowChart, MarginChart } from "@/components/finance/finance-charts"
+import { CashChart, FlowChart, MarginChart, SpendPie } from "@/components/finance/finance-charts"
 import {
   fetchFinance,
   fetchReports,
@@ -189,6 +189,16 @@ export function FinanceView() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <SectionLabel>Spending by category</SectionLabel>
+            <Badge>To date</Badge>
+          </CardHeader>
+          <CardContent>
+            <SpendPie data={data.spend ?? []} />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="flex-row items-center justify-between">

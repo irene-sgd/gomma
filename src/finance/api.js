@@ -1,5 +1,5 @@
 import { verifyAccess } from './access.js';
-import { businessRows, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
+import { businessRows, isPassThrough, isPersonalSpend, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
 import { readFinanceSheets } from './sheets.js';
 
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
@@ -16,7 +16,19 @@ export function buildPayload({ ledger, accounts, forecast }, now = new Date()) {
     ...monthSummary(month, rows, accs, fc),
     status: month < current ? 'past' : month === current ? 'current' : 'future',
   }));
-  return { generatedAt: now.toISOString(), currentMonth: current, months, transactions: publicTransactions(rows, 100) };
+  // Operating spend to date by category: business expenses only, never personal or pass-through money.
+  const elapsed = new Set(months.filter((m) => m.status !== 'future').map((m) => m.month));
+  const byCategory = new Map();
+  for (const r of rows) {
+    if (r.type !== 'Expense' || !elapsed.has(r.month) || isPassThrough(r) || isPersonalSpend(r)) continue;
+    const key = r.category || 'Other';
+    byCategory.set(key, (byCategory.get(key) || 0) + r.amount);
+  }
+  const spend = [...byCategory]
+    .map(([category, amount]) => ({ category, amount: Math.round(amount * 100) / 100 }))
+    .sort((a, b) => b.amount - a.amount);
+
+  return { generatedAt: now.toISOString(), currentMonth: current, months, spend, transactions: publicTransactions(rows, 100) };
 }
 
 export async function handleFinance(request, env, deps = {}) {

@@ -372,3 +372,21 @@ test('personal-realm revenue and refunds never count as business income or reduc
   // The money is real, so cash still includes every row.
   assert.equal(get('Closing cash'), 1000 + 1000 + 179 + 1 + 50 - 400);
 });
+
+test('payload spend by category: business expenses only, grouped and sorted', () => {
+  const data = {
+    ledger: [H,
+      row({ type: 'Expense', amount: '300', cat: 'Transport', date: '5/10/2026' }),
+      row({ type: 'Expense', amount: '200', cat: 'Transport', date: '6/10/2026' }),
+      row({ type: 'Expense', amount: '80', cat: 'Software', date: '7/10/2026' }),
+      row({ type: 'Expense', amount: '999', cat: 'Dining Out', realm: 'Personal', date: '7/10/2026' }),
+      row({ type: 'Expense', amount: '500', cat: 'Royalties', date: '7/10/2026' }),
+      row({ type: 'Revenue', amount: '1000', cat: 'Client Payment', date: '7/10/2026' }),
+      row({ type: 'Expense', amount: '50', cat: 'Software', date: '7/11/2026' }),
+    ],
+    accounts: ACCOUNTS,
+    forecast: forecastWide(['2026-10', '2026-11'], () => [1, 1, 1, 1, 1, 1, 1]),
+  };
+  const p = buildPayload(data, new Date('2026-10-13T05:00:00Z'));
+  assert.deepEqual(p.spend, [{ category: 'Transport', amount: 500 }, { category: 'Software', amount: 80 }]);
+});

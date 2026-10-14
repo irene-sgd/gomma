@@ -30,6 +30,7 @@ export type FinanceData = {
   generatedAt: string
   currentMonth: string
   months: FinanceMonth[]
+  spend?: { category: string; amount: number }[]
   transactions: FinanceTxn[]
 }
 
