@@ -40,6 +40,13 @@ import {
 } from "@/lib/finance"
 import { cn } from "cn"
 
+const short = (n: number) => {
+  const v = Math.abs(n)
+  const body =
+    v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 10_000 ? `${Math.round(v / 1000)}K` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : `${Math.round(v)}`
+  return `${n < 0 ? "−" : ""}฿${body}`
+}
+
 export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
   const [error, setError] = useState(false)
@@ -149,67 +156,6 @@ export function FinanceView() {
           }}
         />
 
-        <Card>
-          <CardContent className="flex items-center gap-4">
-            {revRatio === null ? (
-              <>
-                <SectionLabel>Revenue vs forecast</SectionLabel>
-                <p className="text-muted-foreground">No forecast for this period</p>
-              </>
-            ) : (
-              <>
-                <div
-                  className="relative size-20 shrink-0"
-                  role="progressbar"
-                  aria-label="Revenue against forecast"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.min(Math.round(revRatio * 100), 100)}
-                >
-                  <svg viewBox="0 0 80 80" className="size-full -rotate-90">
-                    <circle cx="40" cy="40" r="32" fill="none" strokeWidth="9" stroke="var(--tinted)" />
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r="32"
-                      fill="none"
-                      strokeWidth="9"
-                      strokeLinecap="round"
-                      stroke="var(--success)"
-                      strokeDasharray={2 * Math.PI * 32}
-                      strokeDashoffset={2 * Math.PI * 32 * (1 - Math.min(revRatio, 1))}
-                    />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center font-bold">
-                    {Math.round(revRatio * 100)}%
-                  </span>
-                </div>
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <SectionLabel>Revenue vs forecast</SectionLabel>
-                    {covered.length > 0 && (
-                      <span className="text-muted-foreground">
-                        {covered.length === 1
-                          ? monthName(covered[0].month)
-                          : `${monthName(covered[0].month)} – ${monthName(covered.at(-1)!.month)}`}
-                      </span>
-                    )}
-                  </div>
-                  <p>
-                    <span className="text-2xl font-bold">{money(revActual)}</span>
-                    <span className="ml-2 text-muted-foreground">of {money(revPlan)}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    {revActual >= revPlan
-                      ? `${money(revActual - revPlan)} above forecast`
-                      : `${money(revPlan - revActual)} to go`}
-                  </p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Metric
             label="Cash"
@@ -237,7 +183,52 @@ export function FinanceView() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            className="flex items-center gap-4 rounded-md bg-secondary p-4"
+            title={
+              covered.length > 0
+                ? `Forecast: ${monthName(covered[0].month)}${
+                    covered.length > 1 ? ` – ${monthName(covered.at(-1)!.month)}` : ""
+                  }`
+                : undefined
+            }
+          >
+            <div
+              className="relative size-16 shrink-0"
+              role="progressbar"
+              aria-label="Revenue against forecast"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={revRatio === null ? 0 : Math.min(Math.round(revRatio * 100), 100)}
+            >
+              <svg viewBox="0 0 64 64" className="size-full -rotate-90">
+                <circle cx="32" cy="32" r="26" fill="none" strokeWidth="8" stroke="var(--tinted)" />
+                {revRatio !== null && (
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="26"
+                    fill="none"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    stroke="var(--success)"
+                    strokeDasharray={2 * Math.PI * 26}
+                    strokeDashoffset={2 * Math.PI * 26 * (1 - Math.min(revRatio, 1))}
+                  />
+                )}
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
+                {revRatio === null ? "—" : `${Math.round(revRatio * 100)}%`}
+              </span>
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="text-sm text-muted-foreground">Revenue vs forecast</span>
+              <span className="text-lg leading-tight font-bold">
+                {revRatio === null ? "—" : `${short(revActual)} / ${short(revPlan)}`}
+              </span>
+            </div>
+          </div>
           <Metric
             label="Break-even revenue"
             value={money(health.breakEven)}
