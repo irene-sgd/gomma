@@ -30,11 +30,10 @@ export function parseDMY(text) {
   return { y, m: mo, d, iso: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`, month: `${y}-${String(mo).padStart(2, '0')}` };
 }
 
-// KBank numbers end in a one-digit check group (240-2-88117-0 -> x8117).
+// Bank style: x + the last 4 digits of the full number, as the bank's own statements disclose it
+// (240-2-88117-0 -> x1170). Numbers with fewer than 4 digits show nothing.
 export function maskAccount(number) {
-  const groups = String(number ?? '').split(/[^0-9]+/).filter(Boolean);
-  if (groups.length > 1 && groups[groups.length - 1].length === 1) groups.pop();
-  const digits = groups.join('');
+  const digits = String(number ?? '').replace(/\D/g, '');
   return digits.length >= 4 ? `x${digits.slice(-4)}` : '';
 }
 
@@ -181,6 +180,9 @@ export function businessRows(ledgerRows, accounts) {
 export const isPassThrough = (row) =>
   PASS_THROUGH_CATEGORIES.includes(norm(row.category)) || (row.type.startsWith('Transfer') && PASS_THROUGH_TRANSFER_WORDS.test(row._text));
 
+// Personal-realm revenue (refunds of personal purchases, verification credits) is not business income.
+export const isPersonalIncome = (row) => row.type === 'Revenue' && norm(row.realm) === 'personal';
+
 export const isPersonalSpend = (row) =>
   row.type === 'Expense' && (norm(row.realm) === 'personal' || PERSONAL_CATEGORIES.includes(norm(row.category)));
 
@@ -209,8 +211,9 @@ export function monthSummary(month, rows, accounts, forecast) {
   const inMonth = kept.filter((r) => r.month === month);
   const sum = (arr) => arr.reduce((s, r) => s + r.amount, 0);
 
-  const refunds = sum(inMonth.filter((r) => r.type === 'Revenue' && norm(r.category) === 'refund'));
-  const revenue = sum(inMonth.filter((r) => r.type === 'Revenue' && norm(r.category) !== 'refund'));
+  const businessIncome = inMonth.filter((r) => r.type === 'Revenue' && !isPersonalIncome(r));
+  const refunds = sum(businessIncome.filter((r) => norm(r.category) === 'refund'));
+  const revenue = sum(businessIncome.filter((r) => norm(r.category) !== 'refund'));
   const businessExpenses = sum(inMonth.filter((r) => r.type === 'Expense' && !isPersonalSpend(r)));
   const transfers = Object.fromEntries(LINES.map((l) => [l, 0]));
   for (const r of inMonth) {

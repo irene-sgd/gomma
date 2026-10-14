@@ -41,9 +41,10 @@ test('D/M/Y parsing is day first and rejects impossible dates', () => {
 });
 
 test('account numbers are masked to x + last 4, never full', () => {
-  assert.equal(maskAccount('240-2-88117-0'), 'x8117');
-  assert.equal(maskAccount('XXX-X-XX850-4'), '');
-  assert.equal(maskAccount('100-8-46850-4'), 'x6850');
+  assert.equal(maskAccount('240-2-88117-0'), 'x1170');
+  assert.equal(maskAccount('240-2-98118-3'), 'x1183');
+  assert.equal(maskAccount('100-8-46850-4'), 'x8504');
+  assert.equal(maskAccount('12'), '');
   assert.equal(maskAccount(''), '');
 });
 
@@ -60,7 +61,7 @@ test('scope: Personal, archived and unscoped accounts never reach the rows', () 
   assert.equal(rows[0].account, 'Reserve');
   const serialised = JSON.stringify(publicTransactions(rows));
   assert.ok(!serialised.includes('KMake') && !serialised.includes('88117-0') && !serialised.includes('46850'));
-  assert.ok(serialised.includes('x8117'));
+  assert.ok(serialised.includes('x1170'));
 });
 
 test('transfer labels are neutral business terms, never the free text', () => {
@@ -331,4 +332,43 @@ test('reports: unknown month, wrong method and cross-origin writes are rejected'
   assert.equal((await handleReports(localReq('/api/finance/reports/2026-10', 'DELETE'), dev(db))).status, 405);
   assert.equal((await handleReports(localReq('/api/finance/reports/2026-10', 'PUT', { Origin: 'https://evil.example' }), dev(db), { read: reportRead })).status, 403);
   assert.equal(db.rows.size, 0);
+});
+
+// ---- two business accounts (Reserve + Budget Wallet) ----
+test('a second Business account adds to cash, and moves between them change neither profit nor total cash', () => {
+  const accounts = parseAccounts([
+    ACCOUNTS[0],
+    ACCOUNTS[1],
+    ['a5', 'Budget Wallet', 'checking', 'THB', 'KBank', '240-2-98118-3', '500', '2026-10-01', '', '', 'Business'],
+    ACCOUNTS[2],
+  ]);
+  const rows = businessRows([H,
+    row({ type: 'Revenue', amount: '1000', cat: 'Project', acc: 'Reserve' }),
+    row({ type: 'Transfer Out', amount: '300', cat: 'Internal Transfer', t: 'To Budget Wallet', acc: 'Reserve' }),
+    row({ type: 'Transfer In', amount: '300', cat: 'Internal Transfer', t: 'From Reserve', acc: 'Budget Wallet' }),
+    row({ type: 'Expense', amount: '50', cat: 'Software', acc: 'Budget Wallet' }),
+  ], accounts);
+  assert.equal(accounts.find((a) => a.name === 'Budget Wallet').mask, 'x1183');
+  const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
+  const get = (n) => m.lines.find((l) => l.line === n).actual;
+  assert.equal(get('Revenue'), 1000);
+  assert.equal(get('Operating costs'), 50);
+  assert.equal(get('Closing cash'), 1000 + 500 + 1000 - 50);
+});
+
+test('personal-realm revenue and refunds never count as business income or reduce business costs', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const rows = businessRows([H,
+    row({ type: 'Revenue', amount: '1000', cat: 'Client Payment' }),
+    row({ type: 'Revenue', amount: '179', cat: 'Refund', realm: 'Personal' }),
+    row({ type: 'Revenue', amount: '1', cat: 'Other', realm: 'Personal' }),
+    row({ type: 'Revenue', amount: '50', cat: 'Refund', realm: 'Business' }),
+    row({ type: 'Expense', amount: '400', cat: 'Software' }),
+  ], accounts);
+  const m = monthSummary('2026-10', rows, accounts, parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0])));
+  const get = (n) => m.lines.find((l) => l.line === n).actual;
+  assert.equal(get('Revenue'), 1000);
+  assert.equal(get('Operating costs'), 400 - 50);
+  // The money is real, so cash still includes every row.
+  assert.equal(get('Closing cash'), 1000 + 1000 + 179 + 1 + 50 - 400);
 });
