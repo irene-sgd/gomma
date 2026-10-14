@@ -37,7 +37,6 @@ import { cn } from "cn"
 export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
   const [error, setError] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null)
   const [reports, setReports] = useState<Record<string, StoredReport>>({})
   const [storage, setStorage] = useState(true)
   const [archive, setArchive] = useState(false)
@@ -51,74 +50,48 @@ export function FinanceView() {
 
   useEffect(() => {
     fetchFinance()
-      .then((d) => {
-        setData(d)
-        const has = d.months.some((m) => m.month === d.currentMonth)
-        setSelected(has ? d.currentMonth : (d.months.at(-1)?.month ?? null))
-      })
+      .then(setData)
       .catch(() => setError(true))
   }, [])
 
   if (error) {
     return (
       <Shell>
-        <p className="text-ink-soft">Unavailable</p>
+        <p className="text-muted-foreground">Unavailable</p>
       </Shell>
     )
   }
-  if (!data || !selected) {
+  if (!data) {
     return (
       <Shell>
         <div className="flex flex-col gap-2">
+          <Skeleton className="h-16 w-full" />
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-72 w-full" />
         </div>
       </Shell>
     )
   }
 
+  // Everything below is actuals only. Forecast lives in the monthly report at the top.
   const elapsed = data.months.filter((m) => m.status !== "future")
-  const latest = elapsed.at(-1)
-  const cash = line(latest, "Closing cash")
-  const burn =
-    (line(latest, "Operating costs")?.forecast ?? 0) +
-    (line(latest, "Owner salary")?.forecast ?? 0)
-  const runway = burn > 0 && cash ? cash.actual / burn : null
-  const detail = data.months.find((m) => m.month === selected)!
-  const actual = pnl(elapsed, "actual")
-  const plan = pnl(elapsed, "forecast")
-  const opMargin = margin(actual.operating, actual.revenue)
-  const opPlanMargin = margin(plan.operating, plan.revenue)
-  const netMargin = margin(actual.net, actual.revenue)
-  const netPlanMargin = margin(plan.net, plan.revenue)
+  const total = pnl(elapsed, "actual")
+  const cash = line(elapsed.at(-1), "Closing cash")?.actual ?? 0
+  const opMargin = margin(total.operating, total.revenue)
+  const netMargin = margin(total.net, total.revenue)
+  const share = (n: number) => pct(margin(n, total.revenue))
 
-  const marginSeries = data.months.map((m) => {
+  const rows = elapsed.map((m) => {
     const a = pnl([m], "actual")
-    const f = pnl([m], "forecast")
-    const pc = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10)
-    const done = m.status !== "future"
     return {
-      month: monthName(m.month),
-      operating: done ? pc(margin(a.operating, a.revenue)) : null,
-      net: done ? pc(margin(a.net, a.revenue)) : null,
-      operatingForecast: pc(margin(f.operating, f.revenue)),
-      netForecast: pc(margin(f.net, f.revenue)),
+      month: m,
+      a,
+      margin: margin(a.operating, a.revenue),
+      netMargin: margin(a.net, a.revenue),
+      cash: line(m, "Closing cash")?.actual ?? 0,
     }
   })
-
-  const flow = data.months.map((m) => ({
-    month: monthName(m.month),
-    revenue: m.status === "future" ? null : (line(m, "Revenue")?.actual ?? 0),
-    costs: m.status === "future" ? null : (line(m, "Operating costs")?.actual ?? 0),
-    revenueForecast: line(m, "Revenue")?.forecast ?? 0,
-    costsForecast: line(m, "Operating costs")?.forecast ?? 0,
-  }))
-  const cashSeries = data.months.map((m) => ({
-    month: monthName(m.month),
-    actual: m.status === "future" ? null : (line(m, "Closing cash")?.actual ?? null),
-    forecast: line(m, "Closing cash")?.forecast ?? 0,
-  }))
+  const point = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10)
 
   return (
     <Shell
@@ -128,7 +101,7 @@ export function FinanceView() {
             type="button"
             onClick={() => setArchive((v) => !v)}
             aria-pressed={archive}
-            className="inline-flex h-9 items-center gap-2 rounded-full bg-(--pair-raised-surface) px-4 font-bold outline-none transition-colors hover:bg-(--pair-strong-surface) focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-ink aria-pressed:text-surface"
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-secondary px-4 font-bold outline-none transition-colors hover:bg-tinted focus-visible:ring-[3px] focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground"
           >
             <SparklesIcon className="size-4" aria-hidden />
             Reports
@@ -149,88 +122,64 @@ export function FinanceView() {
             setReports((prev) => ({ ...prev, [saved.month]: saved }))
           }}
         />
+
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Metric
             label="Cash"
-            value={money(cash?.actual ?? 0)}
-            hint={runway === null ? money(cash?.forecast ?? 0) : `${runway.toFixed(1)} months runway`}
-            tone={(cash?.actual ?? 0) < 0 ? "default" : "success"}
+            value={money(cash)}
+            hint="Business accounts"
+            tone={cash < 0 ? "default" : "success"}
           />
-          <Metric
-            label="Revenue"
-            value={money(actual.revenue)}
-            hint={`Forecast ${money(plan.revenue)}`}
-          />
+          <Metric label="Revenue" value={money(total.revenue)} hint="To date" />
           <Metric
             label="Operating profit"
-            value={money(actual.operating)}
-            hint={`${pct(opMargin)} margin · forecast ${pct(opPlanMargin)}`}
-            tone={actual.operating < 0 ? "default" : "success"}
+            value={money(total.operating)}
+            hint={`${pct(opMargin)} margin`}
+            tone={total.operating < 0 ? "default" : "success"}
           />
           <Metric
             label="Net profit"
-            value={money(actual.net)}
-            hint={`${pct(netMargin)} margin · forecast ${pct(netPlanMargin)}`}
-            tone={actual.net < 0 ? "default" : "success"}
+            value={money(total.net)}
+            hint={`${pct(netMargin)} margin`}
+            tone={total.net < 0 ? "default" : "success"}
           />
-          <Metric
-            label="Net cash flow"
-            value={money(actual.cashFlow)}
-            hint={`Forecast ${money(plan.cashFlow)}`}
-          />
+          <Metric label="Net cash flow" value={money(total.cashFlow)} hint="To date" />
         </div>
 
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Profit and loss</CardTitle>
-            <Badge variant="secondary">To date</Badge>
+            <Badge>To date</Badge>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead />
-                  <TableHead className="text-right">Actual</TableHead>
-                  <TableHead className="text-right">Forecast</TableHead>
-                  <TableHead className="text-right">Difference</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">% of revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(
                   [
-                    ["Revenue", actual.revenue, plan.revenue, true],
-                    ["Operating costs", -actual.costs, -plan.costs, false],
-                    ["Operating profit", actual.operating, plan.operating, true],
-                    ["Tax reserve", -actual.tax, -plan.tax, false],
-                    ["Owner salary", -actual.salary, -plan.salary, false],
-                    ["Net profit", actual.net, plan.net, true],
-                    ["Owner transfers", -actual.transfers, -plan.transfers, false],
-                    ["Net cash flow", actual.cashFlow, plan.cashFlow, true],
-                  ] as [string, number, number, boolean][]
-                ).map(([name, a, f, strong]) => (
-                  <TableRow key={name} className={cn(strong && "bg-(--pair-raised-surface)")}>
+                    ["Revenue", total.revenue, true],
+                    ["Operating costs", -total.costs, false],
+                    ["Operating profit", total.operating, true],
+                    ["Tax reserve", -total.tax, false],
+                    ["Owner salary", -total.salary, false],
+                    ["Net profit", total.net, true],
+                    ["Owner transfers", -total.transfers, false],
+                    ["Net cash flow", total.cashFlow, true],
+                  ] as [string, number, boolean][]
+                ).map(([name, amount, strong]) => (
+                  <TableRow key={name} className={cn(strong && "bg-secondary")}>
                     <TableCell className={cn(strong && "font-bold")}>{name}</TableCell>
                     <TableCell className={cn("text-right", strong && "font-bold")}>
-                      {money(a)}
+                      {money(amount)}
                     </TableCell>
-                    <TableCell className="text-right text-ink-soft">{money(f)}</TableCell>
-                    <TableCell className="text-right">{signedMoney(a - f)}</TableCell>
-                  </TableRow>
-                ))}
-                {(
-                  [
-                    ["Operating margin", opMargin, opPlanMargin],
-                    ["Net margin", netMargin, netPlanMargin],
-                  ] as [string, number | null, number | null][]
-                ).map(([name, a, f]) => (
-                  <TableRow key={name}>
-                    <TableCell>{name}</TableCell>
-                    <TableCell className="text-right">{pct(a)}</TableCell>
-                    <TableCell className="text-right text-ink-soft">{pct(f)}</TableCell>
-                    <TableCell className="text-right">
-                      {a === null || f === null
-                        ? "—"
-                        : `${a - f < 0 ? "−" : "+"}${Math.round(Math.abs(a - f) * 100)} pts`}
+                    <TableCell className="text-right text-muted-foreground">
+                      {share(amount)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -249,55 +198,28 @@ export function FinanceView() {
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Month</TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Forecast</TableHead>
-                  <TableHead className="text-right">Costs</TableHead>
-                  <TableHead className="text-right">Forecast</TableHead>
+                  <TableHead className="text-right">Operating costs</TableHead>
+                  <TableHead className="text-right">Operating profit</TableHead>
                   <TableHead className="text-right">Margin</TableHead>
-                  <TableHead className="text-right">Cash</TableHead>
-                  <TableHead className="text-right">On track</TableHead>
+                  <TableHead className="text-right">Net cash flow</TableHead>
+                  <TableHead className="text-right">Closing cash</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {elapsed.map((m) => {
-                  const rev = line(m, "Revenue")
-                  const cost = line(m, "Operating costs")
-                  const c = line(m, "Closing cash")
-                  return (
-                    <TableRow
-                      key={m.month}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={m.month === selected}
-                      onClick={() => setSelected(m.month)}
-                      onKeyDown={(e) => e.key === "Enter" && setSelected(m.month)}
-                      className={cn("cursor-pointer", m.month === selected && "bg-(--pair-raised-surface)")}
-                    >
-                      <TableCell className="font-bold">
-                        {monthName(m.month)}
-                        {m.status === "current" && (
-                          <Badge className="ml-2">Partial</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">{money(rev?.actual ?? 0)}</TableCell>
-                      <TableCell className="text-right text-ink-soft">
-                        {money(rev?.forecast ?? 0)}
-                      </TableCell>
-                      <TableCell className="text-right">{money(cost?.actual ?? 0)}</TableCell>
-                      <TableCell className="text-right text-ink-soft">
-                        {money(cost?.forecast ?? 0)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {pct(margin(pnl([m], "actual").operating, pnl([m], "actual").revenue))}
-                      </TableCell>
-                      <TableCell className="text-right">{money(c?.actual ?? 0)}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={m.off === 0 ? "success" : "danger"}>
-                          {m.onTrack} / {m.lines.length}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
+                {rows.map((r) => (
+                  <TableRow key={r.month.month}>
+                    <TableCell className="font-bold">
+                      {monthName(r.month.month)}
+                      {r.month.status === "current" && <Badge className="ml-2">Partial</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right">{money(r.a.revenue)}</TableCell>
+                    <TableCell className="text-right">{money(r.a.costs)}</TableCell>
+                    <TableCell className="text-right">{money(r.a.operating)}</TableCell>
+                    <TableCell className="text-right">{pct(r.margin)}</TableCell>
+                    <TableCell className="text-right">{money(r.a.cashFlow)}</TableCell>
+                    <TableCell className="text-right">{money(r.cash)}</TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
@@ -308,7 +230,13 @@ export function FinanceView() {
             <SectionLabel>Revenue and costs</SectionLabel>
           </CardHeader>
           <CardContent>
-            <FlowChart data={flow} />
+            <FlowChart
+              data={rows.map((r) => ({
+                month: monthName(r.month.month),
+                revenue: r.a.revenue,
+                costs: r.a.costs,
+              }))}
+            />
           </CardContent>
         </Card>
         <div className="grid gap-2 lg:grid-cols-2">
@@ -317,7 +245,13 @@ export function FinanceView() {
               <SectionLabel>Margin</SectionLabel>
             </CardHeader>
             <CardContent>
-              <MarginChart data={marginSeries} />
+              <MarginChart
+                data={rows.map((r) => ({
+                  month: monthName(r.month.month),
+                  operating: point(r.margin),
+                  net: point(r.netMargin),
+                }))}
+              />
             </CardContent>
           </Card>
           <Card>
@@ -325,60 +259,15 @@ export function FinanceView() {
               <SectionLabel>Closing cash</SectionLabel>
             </CardHeader>
             <CardContent>
-              <CashChart data={cashSeries} />
+              <CashChart
+                data={rows.map((r) => ({
+                  month: monthName(r.month.month),
+                  cash: r.cash,
+                }))}
+              />
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader className="flex-row items-center justify-between gap-2">
-            <CardTitle>Month detail</CardTitle>
-            <label className="flex items-center gap-2">
-              <span className="sr-only">Month</span>
-              <select
-                value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-                className="h-9 rounded-full bg-(--pair-raised-surface) px-4 font-bold text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
-              >
-                {data.months.map((m) => (
-                  <option key={m.month} value={m.month}>
-                    {monthName(m.month)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Line</TableHead>
-                  <TableHead className="text-right">Actual</TableHead>
-                  <TableHead className="text-right">Forecast</TableHead>
-                  <TableHead className="text-right">Difference</TableHead>
-                  <TableHead className="text-right" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {detail.lines.map((l) => (
-                  <TableRow key={l.line} className={cn(l.off && "bg-destructive/20")}>
-                    <TableCell className="font-bold">{l.line}</TableCell>
-                    <TableCell className="text-right">{money(l.actual)}</TableCell>
-                    <TableCell className="text-right text-ink-soft">
-                      {money(l.forecast)}
-                    </TableCell>
-                    <TableCell className="text-right">{signedMoney(l.difference)}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant={l.off ? "danger" : "success"}>
-                        {l.off ? "Off" : "On track"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
@@ -400,10 +289,10 @@ export function FinanceView() {
                   const inflow = t.type === "Revenue" || t.type === "Transfer In"
                   return (
                     <TableRow key={`${t.date}-${i}`}>
-                      <TableCell className="text-ink-soft">{t.date}</TableCell>
+                      <TableCell className="text-muted-foreground">{t.date}</TableCell>
                       <TableCell className="max-w-72 truncate">{t.transaction}</TableCell>
-                      <TableCell className="text-ink-soft">{t.category}</TableCell>
-                      <TableCell className="text-ink-soft">
+                      <TableCell className="text-muted-foreground">{t.category}</TableCell>
+                      <TableCell className="text-muted-foreground">
                         {t.account} {t.accountMask}
                       </TableCell>
                       <TableCell className={cn("text-right", inflow && "text-success")}>

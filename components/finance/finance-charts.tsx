@@ -1,6 +1,14 @@
 "use client"
 
-import { Bar, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import {
   ChartContainer,
@@ -13,23 +21,25 @@ import { money } from "@/lib/finance"
 const flowConfig = {
   revenue: { label: "Revenue", color: "var(--chart-1)" },
   costs: { label: "Operating costs", color: "var(--chart-3)" },
-  revenueForecast: { label: "Revenue forecast", color: "var(--chart-2)" },
-  costsForecast: { label: "Costs forecast", color: "var(--chart-5)" },
 } satisfies ChartConfig
 
 const cashConfig = {
-  actual: { label: "Actual", color: "var(--chart-1)" },
-  forecast: { label: "Forecast", color: "var(--chart-2)" },
+  cash: { label: "Closing cash", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-const tooltip = (config: ChartConfig) => (
+const marginConfig = {
+  operating: { label: "Operating margin", color: "var(--chart-1)" },
+  net: { label: "Net margin", color: "var(--chart-2)" },
+} satisfies ChartConfig
+
+const tooltip = (config: ChartConfig, format: (n: number) => string) => (
   <ChartTooltipContent
     formatter={(value, name) => (
       <span className="flex w-full items-center justify-between gap-4">
-        <span className="text-ink-soft">
+        <span className="text-muted-foreground">
           {config[name as string]?.label ?? name}
         </span>
-        <span className="font-bold">{money(Number(value))}</span>
+        <span className="font-bold">{format(Number(value))}</span>
       </span>
     )}
   />
@@ -38,17 +48,11 @@ const tooltip = (config: ChartConfig) => (
 export function FlowChart({
   data,
 }: {
-  data: {
-    month: string
-    revenue: number | null
-    costs: number | null
-    revenueForecast: number
-    costsForecast: number
-  }[]
+  data: { month: string; revenue: number; costs: number }[]
 }) {
   return (
     <ChartContainer config={flowConfig} className="aspect-auto h-56 w-full">
-      <ComposedChart data={data} margin={{ left: 4, right: 4 }}>
+      <BarChart data={data} margin={{ left: 4, right: 4 }}>
         <CartesianGrid vertical={false} stroke="var(--tinted)" />
         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
         <YAxis
@@ -57,33 +61,18 @@ export function FlowChart({
           width={64}
           tickFormatter={(v: number) => money(v)}
         />
-        <ChartTooltip cursor={{ fill: "var(--accent)" }} content={tooltip(flowConfig)} />
+        <ChartTooltip
+          cursor={{ fill: "var(--accent)" }}
+          content={tooltip(flowConfig, money)}
+        />
         <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
         <Bar dataKey="costs" fill="var(--color-costs)" radius={4} />
-        <Line
-          dataKey="revenueForecast"
-          stroke="var(--color-revenueForecast)"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          dot={false}
-        />
-        <Line
-          dataKey="costsForecast"
-          stroke="var(--color-costsForecast)"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          dot={false}
-        />
-      </ComposedChart>
+      </BarChart>
     </ChartContainer>
   )
 }
 
-export function CashChart({
-  data,
-}: {
-  data: { month: string; actual: number | null; forecast: number }[]
-}) {
+export function CashChart({ data }: { data: { month: string; cash: number }[] }) {
   return (
     <ChartContainer config={cashConfig} className="aspect-auto h-56 w-full">
       <LineChart data={data} margin={{ left: 4, right: 4 }}>
@@ -95,43 +84,17 @@ export function CashChart({
           width={64}
           tickFormatter={(v: number) => money(v)}
         />
-        <ChartTooltip content={tooltip(cashConfig)} />
-        <Line
-          dataKey="forecast"
-          stroke="var(--color-forecast)"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          dot={false}
-        />
-        <Line
-          dataKey="actual"
-          stroke="var(--color-actual)"
-          strokeWidth={2}
-          dot={false}
-          connectNulls={false}
-        />
+        <ChartTooltip content={tooltip(cashConfig, money)} />
+        <Line dataKey="cash" stroke="var(--color-cash)" strokeWidth={2} dot />
       </LineChart>
     </ChartContainer>
   )
 }
 
-const marginConfig = {
-  operating: { label: "Operating margin", color: "var(--chart-1)" },
-  net: { label: "Net margin", color: "var(--chart-2)" },
-  operatingForecast: { label: "Operating forecast", color: "var(--chart-1)" },
-  netForecast: { label: "Net forecast", color: "var(--chart-2)" },
-} satisfies ChartConfig
-
 export function MarginChart({
   data,
 }: {
-  data: {
-    month: string
-    operating: number | null
-    net: number | null
-    operatingForecast: number | null
-    netForecast: number | null
-  }[]
+  data: { month: string; operating: number | null; net: number | null }[]
 }) {
   return (
     <ChartContainer config={marginConfig} className="aspect-auto h-56 w-full">
@@ -145,32 +108,7 @@ export function MarginChart({
           tickFormatter={(v: number) => `${v}%`}
         />
         <ChartTooltip
-          content={
-            <ChartTooltipContent
-              formatter={(value, name) => (
-                <span className="flex w-full items-center justify-between gap-4">
-                  <span className="text-ink-soft">
-                    {marginConfig[name as keyof typeof marginConfig]?.label ?? name}
-                  </span>
-                  <span className="font-bold">{Math.round(Number(value))}%</span>
-                </span>
-              )}
-            />
-          }
-        />
-        <Line
-          dataKey="operatingForecast"
-          stroke="var(--color-operatingForecast)"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          dot={false}
-        />
-        <Line
-          dataKey="netForecast"
-          stroke="var(--color-netForecast)"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          dot={false}
+          content={tooltip(marginConfig, (n) => `${Math.round(n)}%`)}
         />
         <Line dataKey="operating" stroke="var(--color-operating)" strokeWidth={2} dot />
         <Line dataKey="net" stroke="var(--color-net)" strokeWidth={2} dot />
