@@ -150,47 +150,62 @@ export function FinanceView() {
         />
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between gap-2">
-            <SectionLabel>Revenue vs forecast</SectionLabel>
-            {covered.length > 0 && (
-              <span className="text-muted-foreground">
-                {covered.length === 1
-                  ? monthName(covered[0].month)
-                  : `${monthName(covered[0].month)} – ${monthName(covered.at(-1)!.month)}`}
-              </span>
-            )}
-          </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center gap-4">
             {revRatio === null ? (
-              <p className="text-muted-foreground">No forecast for this period</p>
+              <>
+                <SectionLabel>Revenue vs forecast</SectionLabel>
+                <p className="text-muted-foreground">No forecast for this period</p>
+              </>
             ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <p>
-                    <span className="text-3xl font-bold">{money(revActual)}</span>
-                    <span className="ml-2 text-muted-foreground">of {money(revPlan)}</span>
-                  </p>
-                  <p className="font-bold">{Math.round(revRatio * 100)}%</p>
-                </div>
+              <>
                 <div
-                  className="h-3 w-full overflow-hidden rounded-full bg-tinted"
+                  className="relative size-20 shrink-0"
                   role="progressbar"
                   aria-label="Revenue against forecast"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={Math.min(Math.round(revRatio * 100), 100)}
                 >
-                  <div
-                    className="h-full rounded-full bg-success"
-                    style={{ width: `${Math.min(revRatio, 1) * 100}%` }}
-                  />
+                  <svg viewBox="0 0 80 80" className="size-full -rotate-90">
+                    <circle cx="40" cy="40" r="32" fill="none" strokeWidth="9" stroke="var(--tinted)" />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      fill="none"
+                      strokeWidth="9"
+                      strokeLinecap="round"
+                      stroke="var(--success)"
+                      strokeDasharray={2 * Math.PI * 32}
+                      strokeDashoffset={2 * Math.PI * 32 * (1 - Math.min(revRatio, 1))}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center font-bold">
+                    {Math.round(revRatio * 100)}%
+                  </span>
                 </div>
-                <p className="text-muted-foreground">
-                  {revActual >= revPlan
-                    ? `${money(revActual - revPlan)} above forecast`
-                    : `${money(revPlan - revActual)} to go`}
-                </p>
-              </div>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <SectionLabel>Revenue vs forecast</SectionLabel>
+                    {covered.length > 0 && (
+                      <span className="text-muted-foreground">
+                        {covered.length === 1
+                          ? monthName(covered[0].month)
+                          : `${monthName(covered[0].month)} – ${monthName(covered.at(-1)!.month)}`}
+                      </span>
+                    )}
+                  </div>
+                  <p>
+                    <span className="text-2xl font-bold">{money(revActual)}</span>
+                    <span className="ml-2 text-muted-foreground">of {money(revPlan)}</span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    {revActual >= revPlan
+                      ? `${money(revActual - revPlan)} above forecast`
+                      : `${money(revPlan - revActual)} to go`}
+                  </p>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
