@@ -65,8 +65,8 @@ export function FlowChart({
           cursor={{ fill: "var(--accent)" }}
           content={tooltip(flowConfig, money)}
         />
-        <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-        <Bar dataKey="costs" fill="var(--color-costs)" radius={4} />
+        <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} maxBarSize={48} />
+        <Bar dataKey="costs" fill="var(--color-costs)" radius={4} maxBarSize={48} />
       </BarChart>
     </ChartContainer>
   )
@@ -96,6 +96,13 @@ export function MarginChart({
 }: {
   data: { month: string; operating: number | null; net: number | null }[]
 }) {
+  if (data.every((d) => d.operating === null && d.net === null)) {
+    return (
+      <div className="flex h-56 items-center justify-center text-muted-foreground">
+        No revenue yet
+      </div>
+    )
+  }
   return (
     <ChartContainer config={marginConfig} className="aspect-auto h-56 w-full">
       <LineChart data={data} margin={{ left: 4, right: 4 }}>

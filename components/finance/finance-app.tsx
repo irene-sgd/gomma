@@ -123,6 +123,50 @@ export function FinanceView() {
           }}
         />
 
+        <Card>
+          <CardHeader>
+            <SectionLabel>Revenue and costs</SectionLabel>
+          </CardHeader>
+          <CardContent>
+            <FlowChart
+              data={rows.map((r) => ({
+                month: monthName(r.month.month),
+                revenue: r.a.revenue,
+                costs: r.a.costs,
+              }))}
+            />
+          </CardContent>
+        </Card>
+        <div className="grid gap-2 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <SectionLabel>Margin</SectionLabel>
+            </CardHeader>
+            <CardContent>
+              <MarginChart
+                data={rows.map((r) => ({
+                  month: monthName(r.month.month),
+                  operating: point(r.margin),
+                  net: point(r.netMargin),
+                }))}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <SectionLabel>Closing cash</SectionLabel>
+            </CardHeader>
+            <CardContent>
+              <CashChart
+                data={rows.map((r) => ({
+                  month: monthName(r.month.month),
+                  cash: r.cash,
+                }))}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Metric
             label="Cash"
@@ -224,50 +268,6 @@ export function FinanceView() {
             </Table>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <SectionLabel>Revenue and costs</SectionLabel>
-          </CardHeader>
-          <CardContent>
-            <FlowChart
-              data={rows.map((r) => ({
-                month: monthName(r.month.month),
-                revenue: r.a.revenue,
-                costs: r.a.costs,
-              }))}
-            />
-          </CardContent>
-        </Card>
-        <div className="grid gap-2 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <SectionLabel>Margin</SectionLabel>
-            </CardHeader>
-            <CardContent>
-              <MarginChart
-                data={rows.map((r) => ({
-                  month: monthName(r.month.month),
-                  operating: point(r.margin),
-                  net: point(r.netMargin),
-                }))}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <SectionLabel>Closing cash</SectionLabel>
-            </CardHeader>
-            <CardContent>
-              <CashChart
-                data={rows.map((r) => ({
-                  month: monthName(r.month.month),
-                  cash: r.cash,
-                }))}
-              />
-            </CardContent>
-          </Card>
-        </div>
 
         <Card>
           <CardHeader>
