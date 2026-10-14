@@ -34,6 +34,9 @@ import {
 } from "@/lib/finance"
 import { cn } from "cn"
 
+const monthsBasis = (n: number) =>
+  n <= 1 ? "this month so far" : `an average of ${n} months`
+
 export function FinanceView() {
   const [data, setData] = useState<FinanceData | null>(null)
   const [error, setError] = useState(false)
@@ -145,6 +148,34 @@ export function FinanceView() {
           />
           <Metric label="Net cash flow" value={money(total.cashFlow)} hint="To date" />
         </div>
+
+        {data.metrics && (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <Metric
+              label="Break-even revenue"
+              value={money(data.metrics.breakEven)}
+              hint={`Per month, from ${monthsBasis(data.metrics.window.length)} of real costs and salary${
+                data.metrics.taxShare > 0 ? ` and ${pct(data.metrics.taxShare)} tax reserve` : ""
+              }`}
+            />
+            <Metric
+              label="Cash runway"
+              value={
+                data.metrics.runway === null
+                  ? "—"
+                  : `${data.metrics.runway.toFixed(1)} months`
+              }
+              hint={`${money(data.metrics.cash)} at ${money(data.metrics.burn)} a month`}
+            />
+            <Metric
+              label="Largest client share"
+              value={pct(data.metrics.concentration.share)}
+              hint={`${data.metrics.concentration.clients} ${
+                data.metrics.concentration.clients === 1 ? "client" : "clients"
+              }, last 3 months`}
+            />
+          </div>
+        )}
 
         <Card>
           <CardHeader>

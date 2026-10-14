@@ -204,9 +204,8 @@ export function compare(actual, forecast) {
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
-export function monthSummary(month, rows, accounts, forecast) {
-  const f = forecast[month];
-  if (!f) throw new FinanceDataError(`Forecast: no row for ${month}`);
+// Actuals for one month from the ledger, keyed by line name. No forecast needed.
+export function monthActuals(month, rows, accounts) {
   const kept = rows.filter((r) => !isPassThrough(r));
   const inMonth = kept.filter((r) => r.month === month);
   const sum = (arr) => arr.reduce((s, r) => s + r.amount, 0);
@@ -232,7 +231,7 @@ export function monthSummary(month, rows, accounts, forecast) {
     }
   }
 
-  const actual = {
+  return {
     Revenue: revenue,
     'Operating costs': businessExpenses - refunds + transfers['Equipment fund'],
     'Tax reserve': transfers['Tax reserve'],
@@ -241,9 +240,70 @@ export function monthSummary(month, rows, accounts, forecast) {
     'Owner transfers': transfers['Owner transfers'],
     'Closing cash': closing,
   };
+}
+
+export function monthSummary(month, rows, accounts, forecast) {
+  const f = forecast[month];
+  if (!f) throw new FinanceDataError(`Forecast: no row for ${month}`);
+  const actual = monthActuals(month, rows, accounts);
   const lines = LINES.map((line) => ({ line, ...compare(actual[line], f[line]) }));
   const off = lines.filter((l) => l.off).length;
   return { month, lines, onTrack: lines.length - off, off };
+}
+
+const addMonths = (month, delta) => {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
+// Business health numbers from real ledger activity only (no forecast):
+//  burn           average monthly operating costs plus owner salary
+//  breakEven      monthly revenue that covers burn once the tax reserve share is set aside
+//  runway         current cash in months of burn
+//  concentration  the largest client's share of revenue (never the name)
+// Burn averages up to the last 3 closed months; before any month has closed, the running month.
+export function businessMetrics(rows, accounts, currentMonth) {
+  const seen = [...new Set(rows.map((r) => r.month))].sort();
+  const closed = seen.filter((m) => m < currentMonth).slice(-3);
+  const window = closed.length ? closed : [currentMonth];
+
+  const actuals = window.map((m) => monthActuals(m, rows, accounts));
+  const avg = (key) => actuals.reduce((t, a) => t + a[key], 0) / actuals.length;
+  const burn = avg('Operating costs') + avg('Owner salary');
+  const revenueTotal = actuals.reduce((t, a) => t + a.Revenue, 0);
+  const taxTotal = actuals.reduce((t, a) => t + a['Tax reserve'], 0);
+  const taxShare = revenueTotal > 0 ? Math.min(taxTotal / revenueTotal, 0.9) : 0;
+  const breakEven = burn / (1 - taxShare);
+
+  const cash = monthActuals(currentMonth, rows, accounts)['Closing cash'];
+  const runway = burn > 0 ? cash / burn : null;
+
+  // Concentration: the 3 calendar months ending now, so a quiet month does not hide a client.
+  const span = new Set([addMonths(currentMonth, -2), addMonths(currentMonth, -1), currentMonth]);
+  const byClient = new Map();
+  for (const r of rows) {
+    if (!span.has(r.month) || r.type !== 'Revenue' || isPassThrough(r) || isPersonalIncome(r)) continue;
+    if (norm(r.category) === 'refund') continue;
+    byClient.set(r.transaction, (byClient.get(r.transaction) || 0) + r.amount);
+  }
+  const total = [...byClient.values()].reduce((t, v) => t + v, 0);
+  const top = Math.max(0, ...byClient.values());
+  const round = (n) => Math.round(n * 100) / 100;
+
+  return {
+    window,
+    burn: round(burn),
+    taxShare: Math.round(taxShare * 1000) / 1000,
+    breakEven: round(breakEven),
+    cash: round(cash),
+    runway: runway === null ? null : Math.round(runway * 10) / 10,
+    concentration: {
+      share: total > 0 ? Math.round((top / total) * 1000) / 1000 : null,
+      clients: byClient.size,
+      months: [...span].sort(),
+    },
+  };
 }
 
 // Neutral labels for transfers: the free text on a transfer is often personal context.

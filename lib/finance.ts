@@ -26,11 +26,22 @@ export type FinanceTxn = {
   accountMask: string
 }
 
+export type FinanceMetrics = {
+  window: string[]
+  burn: number
+  taxShare: number
+  breakEven: number
+  cash: number
+  runway: number | null
+  concentration: { share: number | null; clients: number; months: string[] }
+}
+
 export type FinanceData = {
   generatedAt: string
   currentMonth: string
   months: FinanceMonth[]
   spend?: { category: string; amount: number }[]
+  metrics?: FinanceMetrics
   transactions: FinanceTxn[]
 }
 

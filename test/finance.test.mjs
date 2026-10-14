@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  businessMetrics,
   businessRows, compare, FinanceDataError, isPassThrough, maskAccount, monthSummary, parseAccounts, parseAmount, parseDMY, parseForecast, publicTransactions,
 } from '../src/finance/ledger.js';
 import { _resetCache, readFinanceSheets } from '../src/finance/sheets.js';
@@ -389,4 +390,48 @@ test('payload spend by category: business expenses only, grouped and sorted', ()
   };
   const p = buildPayload(data, new Date('2026-10-13T05:00:00Z'));
   assert.deepEqual(p.spend, [{ category: 'Transport', amount: 500 }, { category: 'Software', amount: 80 }]);
+});
+
+test('business metrics: burn, break-even, runway and concentration come from real rows only', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const rows = businessRows([H,
+    // August
+    row({ type: 'Revenue', amount: '48000', cat: 'Client Payment', t: 'Client Payment - ALPHA', date: '31/8/2026' }),
+    row({ type: 'Revenue', amount: '12000', cat: 'Client Payment', t: 'Client Payment - BETA', date: '31/8/2026' }),
+    row({ type: 'Expense', amount: '4000', cat: 'Software', date: '10/8/2026' }),
+    row({ type: 'Transfer Out', amount: '25000', t: 'Owner salary', date: '1/8/2026' }),
+    row({ type: 'Transfer Out', amount: '6000', t: 'Tax reserve', date: '31/8/2026' }),
+    // September
+    row({ type: 'Revenue', amount: '30000', cat: 'Client Payment', t: 'Client Payment - ALPHA', date: '29/9/2026' }),
+    row({ type: 'Expense', amount: '6000', cat: 'Software', date: '12/9/2026' }),
+    row({ type: 'Transfer Out', amount: '25000', t: 'Owner salary', date: '1/9/2026' }),
+    row({ type: 'Transfer Out', amount: '3000', t: 'Tax reserve', date: '29/9/2026' }),
+    // a personal refund and personal spend never count
+    row({ type: 'Revenue', amount: '999', cat: 'Refund', realm: 'Personal', date: '7/9/2026' }),
+    row({ type: 'Expense', amount: '777', cat: 'Dining Out', realm: 'Personal', date: '7/9/2026' }),
+  ], accounts);
+  const m = businessMetrics(rows, accounts, '2026-10');
+  assert.deepEqual(m.window, ['2026-08', '2026-09']);
+  assert.equal(m.burn, (4000 + 25000 + 6000 + 25000) / 2); // costs + salary, averaged
+  assert.equal(m.taxShare, 0.1); // 9,000 of 90,000
+  assert.equal(m.breakEven, Math.round((m.burn / 0.9) * 100) / 100);
+  assert.equal(m.runway, Math.round((m.cash / m.burn) * 10) / 10);
+  // Concentration over Aug-Oct: ALPHA 78,000 of 90,000
+  assert.equal(m.concentration.share, Math.round((78000 / 90000) * 1000) / 1000);
+  assert.equal(m.concentration.clients, 2);
+  assert.ok(!JSON.stringify(m).includes('ALPHA'));
+});
+
+test('business metrics: before any month closes, the running month is used; no revenue means no share', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const rows = businessRows([H,
+    row({ type: 'Expense', amount: '560', cat: 'Software', date: '5/10/2026' }),
+    row({ type: 'Transfer Out', amount: '25000', t: 'Owner salary', date: '1/10/2026' }),
+  ], accounts);
+  const m = businessMetrics(rows, accounts, '2026-10');
+  assert.deepEqual(m.window, ['2026-10']);
+  assert.equal(m.burn, 25560);
+  assert.equal(m.taxShare, 0);
+  assert.equal(m.breakEven, 25560);
+  assert.equal(m.concentration.share, null);
 });

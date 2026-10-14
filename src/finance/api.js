@@ -1,5 +1,5 @@
 import { verifyAccess } from './access.js';
-import { businessRows, isPassThrough, isPersonalSpend, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
+import { businessMetrics, businessRows, isPassThrough, isPersonalSpend, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
 import { readFinanceSheets } from './sheets.js';
 
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
@@ -28,7 +28,7 @@ export function buildPayload({ ledger, accounts, forecast }, now = new Date()) {
     .map(([category, amount]) => ({ category, amount: Math.round(amount * 100) / 100 }))
     .sort((a, b) => b.amount - a.amount);
 
-  return { generatedAt: now.toISOString(), currentMonth: current, months, spend, transactions: publicTransactions(rows, 100) };
+  return { generatedAt: now.toISOString(), currentMonth: current, months, spend, metrics: businessMetrics(rows, accs, current), transactions: publicTransactions(rows, 100) };
 }
 
 export async function handleFinance(request, env, deps = {}) {
