@@ -93,6 +93,10 @@ export function FinanceView() {
   const share = (v: number) => pct(margin(v, total.revenue))
   const perMonth = (v: number) => (n > 1 ? `${money(v / n)} a month` : " ")
   const inPeriod = new Set(months.map((m) => m.month))
+  const covered = data.months.filter((m) => inPeriod.has(m.month))
+  const revActual = covered.reduce((t, m) => t + (line(m, "Revenue")?.actual ?? 0), 0)
+  const revPlan = covered.reduce((t, m) => t + (line(m, "Revenue")?.forecast ?? 0), 0)
+  const revRatio = revPlan > 0 ? revActual / revPlan : null
   const recent = data.transactions.filter((t) => inPeriod.has(t.date.slice(0, 7)))
   const point = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10)
   const series = months.map((m) => {
@@ -144,6 +148,52 @@ export function FinanceView() {
             setReports((prev) => ({ ...prev, [saved.month]: saved }))
           }}
         />
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between gap-2">
+            <SectionLabel>Revenue vs forecast</SectionLabel>
+            {covered.length > 0 && (
+              <span className="text-muted-foreground">
+                {covered.length === 1
+                  ? monthName(covered[0].month)
+                  : `${monthName(covered[0].month)} – ${monthName(covered.at(-1)!.month)}`}
+              </span>
+            )}
+          </CardHeader>
+          <CardContent>
+            {revRatio === null ? (
+              <p className="text-muted-foreground">No forecast for this period</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <p>
+                    <span className="text-3xl font-bold">{money(revActual)}</span>
+                    <span className="ml-2 text-muted-foreground">of {money(revPlan)}</span>
+                  </p>
+                  <p className="font-bold">{Math.round(revRatio * 100)}%</p>
+                </div>
+                <div
+                  className="h-3 w-full overflow-hidden rounded-full bg-tinted"
+                  role="progressbar"
+                  aria-label="Revenue against forecast"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(Math.round(revRatio * 100), 100)}
+                >
+                  <div
+                    className="h-full rounded-full bg-success"
+                    style={{ width: `${Math.min(revRatio, 1) * 100}%` }}
+                  />
+                </div>
+                <p className="text-muted-foreground">
+                  {revActual >= revPlan
+                    ? `${money(revActual - revPlan)} above forecast`
+                    : `${money(revPlan - revActual)} to go`}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Metric
