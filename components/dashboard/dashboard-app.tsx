@@ -141,7 +141,12 @@ export function DashboardApp() {
                 <ExecutiveTab project={project} live={data} />
               </TabsContent>
               <TabsContent value="finance">
-                <FinanceTab project={project} live={data} />
+                {project.key === "gomma" ? (
+                  // The studio's own money: the same master spreadsheet, business side only.
+                  <FinanceView embedded />
+                ) : (
+                  <FinanceTab project={project} live={data} />
+                )}
               </TabsContent>
               <TabsContent value="operations">
                 <OperationsTab live={data} />

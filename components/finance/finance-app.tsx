@@ -34,7 +34,7 @@ import {
 } from "@/lib/finance"
 import { cn } from "cn"
 
-export function FinanceView() {
+export function FinanceView({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<FinanceData | null>(null)
   const [error, setError] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -68,7 +68,7 @@ export function FinanceView() {
   }
   if (!data || !selected) {
     return (
-      <Shell>
+      <Shell embedded={embedded}>
         <div className="flex flex-col gap-2">
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-64 w-full" />
@@ -122,6 +122,7 @@ export function FinanceView() {
 
   return (
     <Shell
+      embedded={embedded}
       action={
         Object.keys(reports).length > 0 ? (
           <button
@@ -689,14 +690,21 @@ function ReviewWidget({
 function Shell({
   children,
   action,
+  embedded = false,
 }: {
   children: React.ReactNode
   action?: React.ReactNode
+  embedded?: boolean
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2 px-2 pt-2">
-        <h1 className="text-2xl font-bold">Finance</h1>
+      <div
+        className={cn(
+          "flex items-center gap-2 px-2",
+          embedded ? "justify-end" : "justify-between pt-2"
+        )}
+      >
+        {!embedded && <h1 className="text-2xl font-bold">Finance</h1>}
         {action}
       </div>
       {children}
