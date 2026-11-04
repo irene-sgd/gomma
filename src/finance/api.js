@@ -1,6 +1,13 @@
 import { verifyAccess } from './access.js';
 import { businessRows, monthlyHistory, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
-import { readFinanceSheets } from './sheets.js';
+import { readLedger } from './d1.js';
+import { readForecast } from './sheets.js';
+
+// Ledger and accounts from finance-dashboard's D1, forecast from the Financial Model sheet.
+export async function readFinanceData(env, deps = {}) {
+  const [{ ledger, accounts }, forecast] = await Promise.all([readLedger(env), readForecast(env, deps)]);
+  return { ledger, accounts, forecast };
+}
 
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
 const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -24,7 +31,7 @@ export async function handleFinance(request, env, deps = {}) {
   const access = await verifyAccess(request, env, deps);
   if (!access.ok) return reply({ error: 'unauthorized' }, access.status);
   try {
-    const data = await (deps.read || readFinanceSheets)(env, deps);
+    const data = await (deps.read || readFinanceData)(env, deps);
     return reply(buildPayload(data));
   } catch (err) {
     console.error('finance', err?.message);

@@ -3,9 +3,10 @@ import { test } from 'node:test';
 
 import {
   monthlyHistory,
-  businessRows, compare, FinanceDataError, isPassThrough, maskAccount, monthSummary, parseAccounts, parseAmount, parseDMY, parseForecast, publicTransactions,
+  businessRows, compare, FinanceDataError, isPassThrough, maskAccount, monthSummary, parseAccounts, parseAmount, parseDMY, parseISODate, parseForecast, publicTransactions,
 } from '../src/finance/ledger.js';
-import { _resetCache, readFinanceSheets } from '../src/finance/sheets.js';
+import { _resetCache, readForecast } from '../src/finance/sheets.js';
+import { ACCOUNTS_SQL, LEDGER_SQL, readLedger } from '../src/finance/d1.js';
 
 const ACCOUNTS = [
   ['ID', 'Name', 'Type', 'Currency', 'Institution', 'Account Number', 'Opening Balance', 'Opening Date', 'Created At', 'Archived At', ''],
@@ -38,6 +39,8 @@ test('D/M/Y parsing is day first and rejects impossible dates', () => {
   assert.equal(parseDMY('7/26/2026'), null);
   assert.equal(parseDMY('31/2/2026'), null);
   assert.equal(parseDMY('2026-07-26'), null);
+  assert.equal(parseISODate('2026-07-26').month, '2026-07');
+  assert.equal(parseISODate('2026-02-31'), null);
   assert.equal(parseAmount('1,234.50'), 1234.5);
 });
 
@@ -192,34 +195,52 @@ test('on track and off counts add up to the seven lines', () => {
   assert.equal(m.onTrack, 7);
 });
 
-test('sheets client: GET only, readonly scope, ledger+Accounts from master, Forecast from the model', async () => {
+test('sheets client: GET only, readonly scope, only the Forecast tab of the model', async () => {
   _resetCache();
   const { privateKey } = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign']);
   const pkcs8 = Buffer.from(await crypto.subtle.exportKey('pkcs8', privateKey)).toString('base64');
   const calls = [];
   const fetchImpl = async (url, init = {}) => {
     calls.push({ url: String(url), method: init.method || 'GET', body: init.body ? String(init.body) : '' });
-    const u = String(url);
-    if (u.includes('oauth2')) return Response.json({ access_token: 't' });
-    if (u.includes('batchGet') && u.includes('/fid/')) return Response.json({ valueRanges: [{ values: forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0]) }] });
-    if (u.includes('batchGet')) return Response.json({ valueRanges: [{ values: [H] }, { values: ACCOUNTS }] });
-    return Response.json({ sheets: ['Untitled', 'Summary', 'Accounts', 'Plan', 'Investments'].map((title) => ({ properties: { title } })) });
+    if (String(url).includes('oauth2')) return Response.json({ access_token: 't' });
+    return Response.json({ valueRanges: [{ values: forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0]) }] });
   };
-  const env = { GOOGLE_SHEETS_SPREADSHEET_ID: 'sid', GOOGLE_FORECAST_SPREADSHEET_ID: 'fid', GOOGLE_SERVICE_ACCOUNT_EMAIL: 'sa@x.iam', GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: `-----BEGIN PRIVATE KEY-----\n${pkcs8}\n-----END PRIVATE KEY-----` };
-  await readFinanceSheets(env, { fetchImpl });
+  const env = { GOOGLE_FORECAST_SPREADSHEET_ID: 'fid', GOOGLE_SERVICE_ACCOUNT_EMAIL: 'sa@x.iam', GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: `-----BEGIN PRIVATE KEY-----\n${pkcs8}\n-----END PRIVATE KEY-----` };
+  await readForecast(env, { fetchImpl });
   const sheets = calls.filter((c) => c.url.includes('sheets.googleapis.com'));
   assert.ok(sheets.every((c) => c.method === 'GET'));
   const jwt = calls.find((c) => c.url.includes('oauth2')).body;
   const claim = JSON.parse(Buffer.from(decodeURIComponent(jwt.split('assertion=')[1]).split('.')[1], 'base64url'));
   assert.equal(claim.scope, 'https://www.googleapis.com/auth/spreadsheets.readonly');
-  const batches = sheets.filter((c) => c.url.includes('batchGet')).map((c) => decodeURIComponent(c.url));
-  const batch = batches.join(' ');
-  for (const banned of ['Summary', 'Plan', 'Investments']) assert.ok(!batch.includes(banned));
-  assert.ok(batches.some((b) => b.includes('/sid/') && b.includes("'Untitled'") && b.includes("'Accounts'") && !b.includes('Forecast')));
-  assert.ok(batches.some((b) => b.includes('/fid/') && b.includes("'Forecast'")));
-  const n = calls.length;
-  await readFinanceSheets(env, { fetchImpl });
-  assert.equal(calls.length, n, 'second read served from cache');
+  assert.equal(sheets.length, 1);
+  assert.ok(decodeURIComponent(sheets[0].url).includes("/fid/values:batchGet?ranges='Forecast'"));
+  await readForecast(env, { fetchImpl });
+  assert.equal(calls.length, 2, 'second read served from cache');
+});
+
+test('ledger reader: fixed SELECTs only, business accounts only, tables the model parses', async () => {
+  for (const sql of [LEDGER_SQL, ACCOUNTS_SQL]) {
+    assert.match(sql, /^SELECT /);
+    assert.doesNotMatch(sql, /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE)\b/i);
+  }
+  assert.match(LEDGER_SQL, /deleted_at IS NULL/);
+  assert.match(LEDGER_SQL, /scope = 'Business' AND archived_at IS NULL/);
+  const prepared = [];
+  const db = {
+    prepare: (sql) => { prepared.push(sql); return { sql }; },
+    batch: async (stmts) => stmts.map((s) => ({ results: s.sql === LEDGER_SQL
+      ? [{ transaction_name: 'Client A', type: 'Revenue', amount: 1000, category: 'Project', realm: 'Business', paid_date: '2026-10-05', notes: '', account: 'Reserve' }]
+      : [{ name: 'Reserve', account_number: '240-2-88117-0', opening_balance: 1000, opening_date: '2026-07-01', archived_at: null, scope: 'Business' },
+         { name: 'KMake Kasikorn Wallet', account_number: '100-8-46850-4', opening_balance: 0, opening_date: '2026-07-01', archived_at: null, scope: 'Personal' }] })),
+  };
+  const { ledger, accounts } = await readLedger({ LEDGER_DB: db });
+  assert.deepEqual(prepared, [LEDGER_SQL, ACCOUNTS_SQL]);
+  const accs = parseAccounts(accounts);
+  assert.deepEqual(accs.map((a) => [a.name, a.scope, a.mask]), [['Reserve', 'Business', 'x1170'], ['KMake Kasikorn Wallet', 'Personal', 'x8504']]);
+  const rows = businessRows(ledger, accs);
+  assert.equal(rows[0].date, '2026-10-05');
+  assert.equal(rows[0].accountMask, 'x1170');
+  await assert.rejects(readLedger({}), FinanceDataError);
 });
 
 // ---- API + Access ----
