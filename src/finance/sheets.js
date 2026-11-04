@@ -33,31 +33,20 @@ async function get(url, token, fetchImpl) {
 const quote = (title) => `'${title.replace(/'/g, "''")}'`;
 let cache = null;
 
-// Ledger + Accounts come from the Master Finance sheet; the forecast comes from the Financial Model.
-// Nothing else is requested.
-export async function readFinanceSheets(env, { fetchImpl = fetch, now = Date.now } = {}) {
+// Only the Forecast tab of the GØMMA Studio Financial Model. The ledger and accounts come from
+// finance-dashboard's D1 (d1.js); the Master Finance sheet is an archive and is no longer read.
+export async function readForecast(env, { fetchImpl = fetch, now = Date.now } = {}) {
   if (cache && now() - cache.at < TTL_MS) return cache.value;
-  const id = env.GOOGLE_SHEETS_SPREADSHEET_ID;
   const forecastId = env.GOOGLE_FORECAST_SPREADSHEET_ID;
-  if (!id) throw new FinanceDataError('GOOGLE_SHEETS_SPREADSHEET_ID is not set');
   if (!forecastId) throw new FinanceDataError('GOOGLE_FORECAST_SPREADSHEET_ID is not set');
   const token = await accessToken(env, fetchImpl);
-
-  const meta = await get(`${API}/${id}?fields=sheets.properties.title`, token, fetchImpl);
-  const titles = (meta.sheets || []).map((s) => s.properties.title);
-  const ledger = titles[0];
-  if (!titles.includes('Accounts')) throw new FinanceDataError('Missing tab: Accounts');
-
-  const range = (t) => `ranges=${encodeURIComponent(quote(t))}`;
-  const main = await get(`${API}/${id}/values:batchGet?${range(ledger)}&${range('Accounts')}&valueRenderOption=FORMATTED_VALUE`, token, fetchImpl);
   let model;
   try {
-    model = await get(`${API}/${forecastId}/values:batchGet?${range('Forecast')}&valueRenderOption=UNFORMATTED_VALUE`, token, fetchImpl);
+    model = await get(`${API}/${forecastId}/values:batchGet?ranges=${encodeURIComponent(quote('Forecast'))}&valueRenderOption=UNFORMATTED_VALUE`, token, fetchImpl);
   } catch {
     throw new FinanceDataError('Forecast sheet unreadable (is it shared with the service account, and is there a Forecast tab?)');
   }
-  const [l, a] = main.valueRanges.map((v) => v.values || []);
-  const value = { ledger: l, accounts: a, forecast: model.valueRanges[0].values || [] };
+  const value = model.valueRanges[0].values || [];
   cache = { at: now(), value };
   return value;
 }

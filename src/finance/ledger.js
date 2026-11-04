@@ -7,7 +7,6 @@ export const LINES = ['Revenue', 'Operating costs', 'Tax reserve', 'Equipment fu
 
 const PASS_THROUGH_CATEGORIES = ['royalties', 'loan - sister'];
 const PASS_THROUGH_TRANSFER_WORDS = /bitcoin|btc|binance/i;
-const PERSONAL_CATEGORIES = ['entertainment', 'personal care', 'debt payment', 'credit card', 'royalties', 'healthcare', 'dining out', 'grocery'];
 const TOLERANCE = 0.1;
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -30,6 +29,12 @@ export function parseDMY(text) {
   return { y, m: mo, d, iso: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`, month: `${y}-${String(mo).padStart(2, '0')}` };
 }
 
+// Paid date as D1 stores it: ISO yyyy-mm-dd.
+export function parseISODate(text) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text ?? '').trim());
+  return m ? parseDMY(`${Number(m[3])}/${Number(m[2])}/${m[1]}`) : null;
+}
+
 // Bank style: x + the last 4 digits of the full number, as the bank's own statements disclose it
 // (240-2-88117-0 -> x1170). Numbers with fewer than 4 digits show nothing.
 export function maskAccount(number) {
@@ -45,7 +50,7 @@ function columnMap(header, required, label) {
 }
 
 const ACCOUNT_COLUMNS = ['Name', 'Account Number', 'Opening Balance', 'Opening Date', 'Archived At'];
-const LEDGER_COLUMNS = ['Transaction', 'Type', 'Amount', 'Category', 'Realm', 'Status', 'Paid Date', 'Notes', 'Account'];
+const LEDGER_COLUMNS = ['Transaction', 'Type', 'Amount', 'Category', 'Realm', 'Paid Date', 'Notes', 'Account'];
 
 // Column K carries scope; its header cell is blank in the live sheet.
 export function parseAccounts(rows) {
@@ -156,7 +161,7 @@ export function businessRows(ledgerRows, accounts) {
   for (const r of body) {
     const account = byName.get(norm(get(r, 'Account')));
     if (!account) continue;
-    const date = parseDMY(get(r, 'Paid Date'));
+    const date = parseISODate(get(r, 'Paid Date')) || parseDMY(get(r, 'Paid Date'));
     const amount = parseAmount(get(r, 'Amount'));
     if (!date || amount === null) throw new FinanceDataError(`Ledger: unreadable date or amount on a ${account.name} row (${get(r, 'Paid Date')})`);
     const type = String(get(r, 'Type')).trim();
@@ -183,8 +188,8 @@ export const isPassThrough = (row) =>
 // Personal-realm revenue (refunds of personal purchases, verification credits) is not business income.
 export const isPersonalIncome = (row) => row.type === 'Revenue' && norm(row.realm) === 'personal';
 
-export const isPersonalSpend = (row) =>
-  row.type === 'Expense' && (norm(row.realm) === 'personal' || PERSONAL_CATEGORIES.includes(norm(row.category)));
+// Realm is set on every ledger row by finance-dashboard (its docs/lommi.md decides it); it is not re-derived here.
+export const isPersonalSpend = (row) => row.type === 'Expense' && norm(row.realm) === 'personal';
 
 export function transferLine(row) {
   if (row.type !== 'Transfer Out') return null;

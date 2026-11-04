@@ -12,6 +12,13 @@ binding = "FINANCE_DB"
 database_name = "gomma-finance"
 database_id = "9c767de6-6f3e-46ec-9cc0-fba7da211d5a"
 
+# finance-dashboard's ledger. Read only: src/finance/d1.js is the only code that touches it and
+# runs fixed SELECTs. finance-dashboard is the only writer.
+[[d1_databases]]
+binding = "LEDGER_DB"
+database_name = "finance-dashboard"
+database_id = "fa7ac0b7-e3c2-4599-99cc-91012dade3c4"
+
 [[ratelimits]]
 name = "INTAKE_LIMITER"
 namespace_id = "1001"
@@ -27,7 +34,7 @@ namespace_id = "1002"
   period = 60
 
 # Secrets (set in Cloudflare, never here): NOTION_TOKEN, ANTHROPIC_API_KEY,
-# GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_SHEETS_SPREADSHEET_ID,
+# GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY,
 # GOOGLE_FORECAST_SPREADSHEET_ID (GØMMA Studio Financial Model, Forecast tab),
 # FINANCE_ALLOWED_EMAIL (the one Google email allowed to read /api/finance)
 [vars]

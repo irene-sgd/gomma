@@ -1,9 +1,8 @@
 // Saved monthly reports (actuals vs forecast, frozen at the time the month was closed).
-// Stored in D1 (binding FINANCE_DB). The snapshot is computed on the server from the sheets,
+// Stored in D1 (binding FINANCE_DB). The snapshot is computed on the server from the ledger,
 // never taken from the browser.
 import { verifyAccess } from './access.js';
-import { buildPayload } from './api.js';
-import { readFinanceSheets } from './sheets.js';
+import { buildPayload, readFinanceData } from './api.js';
 
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
 const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -55,7 +54,7 @@ export async function handleReports(request, env, deps = {}) {
       if (origin && origin !== url.origin) return reply({ error: 'forbidden' }, 403);
       const month = match[1];
       if (!MONTH.test(month)) return reply({ error: 'month' }, 400);
-      const payload = buildPayload(await (deps.read || readFinanceSheets)(env, deps), deps.now);
+      const payload = buildPayload(await (deps.read || readFinanceData)(env, deps), deps.now);
       const found = payload.months.find((m) => m.month === month);
       if (!found) return reply({ error: 'month not in forecast' }, 404);
       return reply(await saveReport(env.FINANCE_DB, month, found, deps.now));
