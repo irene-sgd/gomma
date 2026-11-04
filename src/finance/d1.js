@@ -1,4 +1,4 @@
-// Ledger and accounts from finance-dashboard's D1 database, through the LEDGER_DB binding.
+// Ledger, accounts and category flags from finance-dashboard's D1 database, through the LEDGER_DB binding.
 // finance-dashboard owns that database and is its only writer (see its docs/lommi.md).
 // The binding could write, so this module is the only code that touches it, and it only runs
 // the fixed SELECTs below.
@@ -16,16 +16,21 @@ export const ACCOUNTS_SQL = `SELECT name, account_number, opening_balance, openi
 FROM accounts
 ORDER BY sort_order, name`;
 
+// Category flags, so pass-through and personal-only follow finance-dashboard's settings.
+export const CATEGORIES_SQL = `SELECT name, personal_only, pass_through
+FROM categories`;
+
 const LEDGER_HEADER = ['Transaction', 'Type', 'Amount', 'Category', 'Realm', 'Paid Date', 'Notes', 'Account'];
 const ACCOUNTS_HEADER = ['Name', 'Account Number', 'Opening Balance', 'Opening Date', 'Archived At', 'Scope'];
+const CATEGORIES_HEADER = ['Name', 'Personal Only', 'Pass Through'];
 
 // Returns the same header + rows tables the ledger model parses.
 export async function readLedger(env) {
   const db = env.LEDGER_DB;
   if (!db) throw new FinanceDataError('LEDGER_DB binding is not set');
-  let ledger, accounts;
+  let ledger, accounts, categories;
   try {
-    [ledger, accounts] = await db.batch([db.prepare(LEDGER_SQL), db.prepare(ACCOUNTS_SQL)]);
+    [ledger, accounts, categories] = await db.batch([db.prepare(LEDGER_SQL), db.prepare(ACCOUNTS_SQL), db.prepare(CATEGORIES_SQL)]);
   } catch {
     throw new FinanceDataError('Ledger database unreadable');
   }
@@ -38,5 +43,6 @@ export async function readLedger(env) {
       ACCOUNTS_HEADER,
       ...accounts.results.map((r) => [r.name, r.account_number, r.opening_balance, r.opening_date, r.archived_at ?? '', r.scope ?? '']),
     ],
+    categories: [CATEGORIES_HEADER, ...categories.results.map((r) => [r.name, r.personal_only, r.pass_through])],
   };
 }
