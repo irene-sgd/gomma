@@ -3,10 +3,10 @@ import { test } from 'node:test';
 
 import {
   monthlyHistory,
-  businessRows, compare, FinanceDataError, isPassThrough, maskAccount, monthSummary, parseAccounts, parseAmount, parseDMY, parseISODate, parseForecast, publicTransactions,
+  businessRows, compare, parseCategoryFlags, FinanceDataError, isPassThrough, maskAccount, monthSummary, parseAccounts, parseAmount, parseDMY, parseISODate, parseForecast, publicTransactions,
 } from '../src/finance/ledger.js';
 import { _resetCache, readForecast } from '../src/finance/sheets.js';
-import { ACCOUNTS_SQL, LEDGER_SQL, readLedger } from '../src/finance/d1.js';
+import { ACCOUNTS_SQL, CATEGORIES_SQL, LEDGER_SQL, readLedger } from '../src/finance/d1.js';
 
 const ACCOUNTS = [
   ['ID', 'Name', 'Type', 'Currency', 'Institution', 'Account Number', 'Opening Balance', 'Opening Date', 'Created At', 'Archived At', ''],
@@ -17,6 +17,8 @@ const ACCOUNTS = [
 ];
 const H = ['Transaction', 'Type', 'Amount', 'Category', 'Realm', 'Status', 'Payment Method', 'Paid Date', 'Notes', 'Account', 'Currency', 'Intent', 'Account Number'];
 const row = (o) => [o.t ?? 'x', o.type, o.amount, o.cat ?? '', o.realm ?? 'Business', 'Completed', '', o.date ?? '5/10/2026', o.notes ?? '', o.acc ?? 'Reserve', 'THB', '', '100-8-46850-4'];
+const CATEGORIES = [['Name', 'Personal Only', 'Pass Through'], ['Royalties', 0, 0], ['Loan - Sister', 0, 1], ['Dining Out', 1, 0]];
+const FLAGS = parseCategoryFlags(CATEGORIES);
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const monthHead = (ym) => `${MON[Number(ym.slice(5)) - 1]} ${ym.slice(0, 4)}`;
 // values: Revenue, Operating costs, Tax reserve, Equipment fund, Owner salary, Owner transfers, Closing cash
@@ -97,11 +99,11 @@ test('missing column or no business account stops instead of guessing', () => {
 test('pass-through money is excluded from income and cost lines', () => {
   const accounts = parseAccounts(ACCOUNTS);
   const rows = businessRows([H,
-    row({ type: 'Revenue', amount: '5000', cat: 'Royalties' }),
+    row({ type: 'Revenue', amount: '5000', cat: 'Loan - sister' }),
     row({ type: 'Revenue', amount: '700', cat: 'Loan - Sister' }),
     row({ type: 'Transfer Out', amount: '300', cat: 'Crypto', notes: 'Binance top up' }),
     row({ type: 'Revenue', amount: '1000', cat: 'Project' }),
-  ], accounts);
+  ], accounts, FLAGS);
   assert.equal(rows.filter(isPassThrough).length, 3);
   const f = parseForecast(forecastRows('2026-10', [0, 0, 0, 0, 0, 0, 0]));
   const m = monthSummary('2026-10', rows, accounts, f);
@@ -219,7 +221,7 @@ test('sheets client: GET only, readonly scope, only the Forecast tab of the mode
 });
 
 test('ledger reader: fixed SELECTs only, business accounts only, tables the model parses', async () => {
-  for (const sql of [LEDGER_SQL, ACCOUNTS_SQL]) {
+  for (const sql of [LEDGER_SQL, ACCOUNTS_SQL, CATEGORIES_SQL]) {
     assert.match(sql, /^SELECT /);
     assert.doesNotMatch(sql, /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE)\b/i);
   }
@@ -228,13 +230,14 @@ test('ledger reader: fixed SELECTs only, business accounts only, tables the mode
   const prepared = [];
   const db = {
     prepare: (sql) => { prepared.push(sql); return { sql }; },
-    batch: async (stmts) => stmts.map((s) => ({ results: s.sql === LEDGER_SQL
+    batch: async (stmts) => stmts.map((s) => ({ results: s.sql === CATEGORIES_SQL ? [{ name: 'Royalties', personal_only: 0, pass_through: 0 }] : s.sql === LEDGER_SQL
       ? [{ transaction_name: 'Client A', type: 'Revenue', amount: 1000, category: 'Project', realm: 'Business', paid_date: '2026-10-05', notes: '', account: 'Reserve' }]
       : [{ name: 'Reserve', account_number: '240-2-88117-0', opening_balance: 1000, opening_date: '2026-07-01', archived_at: null, scope: 'Business' },
          { name: 'KMake Kasikorn Wallet', account_number: '100-8-46850-4', opening_balance: 0, opening_date: '2026-07-01', archived_at: null, scope: 'Personal' }] })),
   };
-  const { ledger, accounts } = await readLedger({ LEDGER_DB: db });
-  assert.deepEqual(prepared, [LEDGER_SQL, ACCOUNTS_SQL]);
+  const { ledger, accounts, categories } = await readLedger({ LEDGER_DB: db });
+  assert.deepEqual(categories, [['Name', 'Personal Only', 'Pass Through'], ['Royalties', 0, 0]]);
+  assert.deepEqual(prepared, [LEDGER_SQL, ACCOUNTS_SQL, CATEGORIES_SQL]);
   const accs = parseAccounts(accounts);
   assert.deepEqual(accs.map((a) => [a.name, a.scope, a.mask]), [['Reserve', 'Business', 'x1170'], ['KMake Kasikorn Wallet', 'Personal', 'x8504']]);
   const rows = businessRows(ledger, accs);
@@ -419,4 +422,18 @@ test('history: one entry per month, business rows only, clients anonymous, gaps 
   assert.equal(h[2].ownerSalary, 25000);
   assert.ok(!JSON.stringify(h).includes('ALPHA'));
   assert.equal(h[2].closingCash, 1000 + 60000 - 300 + 30000 - 25000);
+});
+
+test('category flags follow finance-dashboard: a business royalty payout is an operating cost', () => {
+  const accounts = parseAccounts(ACCOUNTS);
+  const f = parseForecast(forecastRows('2026-10', [1, 1, 1, 1, 1, 1, 1]));
+  const ledger = [H,
+    row({ type: 'Expense', amount: '17370.78', cat: 'Royalties', t: 'Royalties payout' }),
+    row({ type: 'Expense', amount: '50', cat: 'Dining Out' }),
+  ];
+  const ops = (flags) => monthSummary('2026-10', businessRows(ledger, accounts, flags), accounts, f).lines.find((l) => l.line === 'Operating costs').actual;
+  assert.equal(ops(FLAGS), 17370.78, 'Royalties counts; personal-only Dining Out does not, even as realm Business');
+  const old = parseCategoryFlags([CATEGORIES[0], ['Royalties', 1, 1]]);
+  assert.equal(ops(old), 50, 'flags on Royalties keep it out');
+  assert.equal(parseCategoryFlags(undefined), parseCategoryFlags([]));
 });

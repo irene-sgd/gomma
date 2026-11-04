@@ -1,12 +1,12 @@
 import { verifyAccess } from './access.js';
-import { businessRows, monthlyHistory, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
+import { businessRows, monthlyHistory, parseCategoryFlags, monthSummary, parseAccounts, parseForecast, publicTransactions } from './ledger.js';
 import { readLedger } from './d1.js';
 import { readForecast } from './sheets.js';
 
 // Ledger and accounts from finance-dashboard's D1, forecast from the Financial Model sheet.
 export async function readFinanceData(env, deps = {}) {
-  const [{ ledger, accounts }, forecast] = await Promise.all([readLedger(env), readForecast(env, deps)]);
-  return { ledger, accounts, forecast };
+  const [{ ledger, accounts, categories }, forecast] = await Promise.all([readLedger(env), readForecast(env, deps)]);
+  return { ledger, accounts, categories, forecast };
 }
 
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
@@ -14,9 +14,9 @@ const reply = (body, status = 200) => new Response(JSON.stringify(body), { statu
 
 const bangkokMonth = (now = new Date()) => new Date(now.getTime() + 7 * 3_600_000).toISOString().slice(0, 7);
 
-export function buildPayload({ ledger, accounts, forecast }, now = new Date()) {
+export function buildPayload({ ledger, accounts, categories, forecast }, now = new Date()) {
   const accs = parseAccounts(accounts);
-  const rows = businessRows(ledger, accs);
+  const rows = businessRows(ledger, accs, parseCategoryFlags(categories));
   const fc = parseForecast(forecast);
   const current = bangkokMonth(now);
   const months = Object.keys(fc).sort().map((month) => ({

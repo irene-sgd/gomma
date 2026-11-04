@@ -5,7 +5,6 @@ export class FinanceDataError extends Error {}
 
 export const LINES = ['Revenue', 'Operating costs', 'Tax reserve', 'Equipment fund', 'Owner salary', 'Owner transfers', 'Closing cash'];
 
-const PASS_THROUGH_CATEGORIES = ['royalties', 'loan - sister'];
 const PASS_THROUGH_TRANSFER_WORDS = /bitcoin|btc|binance/i;
 const TOLERANCE = 0.1;
 
@@ -142,8 +141,27 @@ export function parseForecast(rows) {
   return out;
 }
 
+// Category flags come from finance-dashboard's `categories` table (Settings > Categories there),
+// so the two apps agree on what is pass-through or personal-only. Names match case-insensitively.
+export const NO_CATEGORY_FLAGS = { passThrough: new Set(), personalOnly: new Set() };
+
+export function parseCategoryFlags(rows) {
+  if (!rows?.length) return NO_CATEGORY_FLAGS;
+  const [header, ...body] = rows;
+  const get = columnMap(header, ['Name', 'Personal Only', 'Pass Through'], 'Categories');
+  const on = (v) => v === 1 || v === true || norm(v) === '1' || norm(v) === 'true';
+  const flags = { passThrough: new Set(), personalOnly: new Set() };
+  for (const r of body) {
+    const name = norm(get(r, 'Name'));
+    if (!name) continue;
+    if (on(get(r, 'Pass Through'))) flags.passThrough.add(name);
+    if (on(get(r, 'Personal Only'))) flags.personalOnly.add(name);
+  }
+  return flags;
+}
+
 // Scope filter first, then parsing. Returns only fields that are safe to serialise.
-export function businessRows(ledgerRows, accounts) {
+export function businessRows(ledgerRows, accounts, flags = NO_CATEGORY_FLAGS) {
   if (!ledgerRows?.length) throw new FinanceDataError('Ledger: empty');
   const [header, ...body] = ledgerRows;
   const get = columnMap(header, LEDGER_COLUMNS, 'Ledger');
@@ -165,6 +183,7 @@ export function businessRows(ledgerRows, accounts) {
     const amount = parseAmount(get(r, 'Amount'));
     if (!date || amount === null) throw new FinanceDataError(`Ledger: unreadable date or amount on a ${account.name} row (${get(r, 'Paid Date')})`);
     const type = String(get(r, 'Type')).trim();
+    const rawCategory = norm(get(r, 'Category'));
     if (!['Revenue', 'Expense', 'Transfer In', 'Transfer Out'].includes(type)) throw new FinanceDataError(`Ledger: unknown type "${type}"`);
     rows.push({
       date: date.iso,
@@ -176,6 +195,8 @@ export function businessRows(ledgerRows, accounts) {
       transaction: redact(String(get(r, 'Transaction')).trim()),
       account: account.name,
       accountMask: account.mask,
+      passThrough: flags.passThrough.has(rawCategory),
+      personalOnly: flags.personalOnly.has(rawCategory),
       _text: norm(`${get(r, 'Transaction')} ${get(r, 'Category')} ${get(r, 'Notes')}`),
     });
   }
@@ -183,13 +204,14 @@ export function businessRows(ledgerRows, accounts) {
 }
 
 export const isPassThrough = (row) =>
-  PASS_THROUGH_CATEGORIES.includes(norm(row.category)) || (row.type.startsWith('Transfer') && PASS_THROUGH_TRANSFER_WORDS.test(row._text));
+  Boolean(row.passThrough) || (row.type.startsWith('Transfer') && PASS_THROUGH_TRANSFER_WORDS.test(row._text));
 
 // Personal-realm revenue (refunds of personal purchases, verification credits) is not business income.
 export const isPersonalIncome = (row) => row.type === 'Revenue' && norm(row.realm) === 'personal';
 
 // Realm is set on every ledger row by finance-dashboard (its docs/lommi.md decides it); it is not re-derived here.
-export const isPersonalSpend = (row) => row.type === 'Expense' && norm(row.realm) === 'personal';
+// A personal-only category stays out of operating costs whatever its realm, as in finance-dashboard's Work Review.
+export const isPersonalSpend = (row) => row.type === 'Expense' && (norm(row.realm) === 'personal' || Boolean(row.personalOnly));
 
 export function transferLine(row) {
   if (row.type !== 'Transfer Out') return null;
